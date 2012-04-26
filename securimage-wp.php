@@ -1,8 +1,5 @@
 <?php
-/**
- * @package Securimage-WP
- * @version 3.2-WP
- */
+
 /*
 Plugin Name: Securimage-WP
 Plugin URI: http://phpcaptcha.org/download/wordpress-plugin
