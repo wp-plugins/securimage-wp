@@ -4,7 +4,7 @@ Plugin Name: Securimage-WP
 Plugin URI: http://phpcaptcha.org/download/wordpress-plugin
 Description: Adds CAPTCHA protection to comment forms on posts and pages
 Author: Drew Phillips
-Version: 3.2
+Version: 3.2.1
 Author URI: http://www.phpcaptcha.org/ 
 */
 
@@ -437,49 +437,52 @@ function siwp_plugin_settings_link($links) {
 	return $links;
 }
 
+function siwp_callback_check_code_length($value) {
+	$value = preg_replace('/[^\d]/', '', $value);
+	if ((int)$value < 4 || (int)$value > 8) {
+		$value = 6;
+	}
+
+	return (int)$value;
+}
+
+function siwp_callback_check_image_width($value) {
+	$value = preg_replace('/[^\d]/', '', $value);
+	if ((int)$value < 125 || (int)$value > 500) {
+		$value = 215;
+	}
+
+	return (int)$value;
+}
+
+function siwp_callback_check_image_height($value) {
+	$value = preg_replace('/[^\d]/', '', $value);
+	if ((int)$value < 40 || (int)$value > 200) {
+		$value = 80;
+	}
+
+	return (int)$value;
+}
+
+function siwp_callback_check_expiration($value) {
+	$value = preg_replace('/[^\d]/', '', $value);
+	if ((int)$value < 60 || (int)$value > 3600) {
+		$value = 900;
+	}
+
+	return (int)$value;
+}
+
 function siwp_register_settings()
 {
-	register_setting('securimage-wp-options', 'siwp_code_length', function($value) {
-		$value = preg_replace('/[^\d]/', '', $value);
-		if ((int)$value < 4 || (int)$value > 8) {
-			$value = 6;
-		}
-		
-		return (int)$value;
-	});
-	
-	register_setting('securimage-wp-options', 'siwp_image_width', function($value) {
-		$value = preg_replace('/[^\d]/', '', $value);
-		if ((int)$value < 125 || (int)$value > 500) {
-			$value = 215;
-		}
-	
-		return (int)$value;
-	});
-	
-	register_setting('securimage-wp-options', 'siwp_image_height', function($value) {
-		$value = preg_replace('/[^\d]/', '', $value);
-		if ((int)$value < 40 || (int)$value > 200) {
-			$value = 80;
-		}
-	
-		return (int)$value;
-	});
-	
+	register_setting('securimage-wp-options', 'siwp_code_length', 'siwp_callback_check_code_length');
+	register_setting('securimage-wp-options', 'siwp_image_width', 'siwp_callback_check_image_width');
+	register_setting('securimage-wp-options', 'siwp_image_height', 'siwp_callback_check_image_height');
 	register_setting('securimage-wp-options', 'siwp_image_bg_color');
 	register_setting('securimage-wp-options', 'siwp_text_color');
 	register_setting('securimage-wp-options', 'siwp_line_color');
 	register_setting('securimage-wp-options', 'siwp_num_lines', 'intval');
-	
-	register_setting('securimage-wp-options', 'siwp_captcha_expiration', function($value) {
-		$value = preg_replace('/[^\d]/', '', $value);
-		if ((int)$value < 60 || (int)$value > 3600) {
-			$value = 900;
-		}
-		
-		return (int)$value;
-	});
-	
+	register_setting('securimage-wp-options', 'siwp_captcha_expiration', 'siwp_callback_check_expiration');
 	register_setting('securimage-wp-options', 'siwp_image_signature');
 	register_setting('securimage-wp-options', 'siwp_signature_color');
 	register_setting('securimage-wp-options', 'siwp_randomize_background');
