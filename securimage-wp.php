@@ -6,8 +6,8 @@ Description: Adds CAPTCHA protection to comment forms on posts and pages
 Author: Drew Phillips
 Version: 3.2
 Author URI: http://www.phpcaptcha.org/
-License: GPL2
 */
+
 /*  Copyright (C) 2012 Drew Phillips  (http://phpcaptcha.org/download/securimage-wp)
 
 This program is free software; you can redistribute it and/or modify
