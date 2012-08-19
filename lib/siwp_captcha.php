@@ -60,7 +60,7 @@ $options   = array(
 	'captcha_type'	  => $captcha_type,
 	'captchaId'	      => $captchaId,
 	'no_session'	  => true,
-	'use_sqlite_db'   => false,
+	'use_database'    => false,
 );
 
 if (get_option('siwp_randomize_background', 0) == 1) {
