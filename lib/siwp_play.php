@@ -35,7 +35,7 @@ $captchaId = (isset($_GET['id']) && strlen($_GET['id']) == 40) ?
 $options = array(
 	'captchaId' => $captchaId,
 	'no_session' => true,
-	'use_sqlite_db' => false
+	'use_database' => false
 );
 
 $img = new Securimage($options);

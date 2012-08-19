@@ -424,7 +424,10 @@ function siwp_plugin_menu()
 {
 	$screen = get_current_screen();
 	$plugin = plugin_basename(__FILE__);
-	$prefix = $screen->is_network ? 'network_admin_' : '';
+	$prefix = '';
+	if (is_object($screen) && isset($screen->is_network)) {
+	    $prefix = $screen->is_network ? 'network_admin_' : '';
+	}
 	
 	add_options_page('Securimage-WP Options', 'Securimage-WP', 'manage_options', 'securimage-wp-options', 'siwp_plugin_options');
 	add_action('admin_init', 'siwp_register_settings');
