@@ -6,7 +6,7 @@
  * Project:     Securimage: A PHP class for creating and managing form CAPTCHA images<br />
  * File:        securimage.php<br />
  *
- * Copyright (c) 2012, Drew Phillips
+ * Copyright (c) 2013, Drew Phillips
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -39,18 +39,27 @@
  * @link http://www.phpcaptcha.org Securimage PHP CAPTCHA
  * @link http://www.phpcaptcha.org/latest.zip Download Latest Version
  * @link http://www.phpcaptcha.org/Securimage_Docs/ Online Documentation
- * @copyright 2012 Drew Phillips
+ * @copyright 2013 Drew Phillips
  * @author Drew Phillips <drew@drew-phillips.com>
- * @version 3.2RC4 (Aug 2012)
+ * @version 3.5.1 (June 21, 2013)
  * @package Securimage
  *
  */
 
 /**
  ChangeLog
- 
+
+ 3.5.1
+ - Fix XSS vulnerability in example_form.php (discovered by Gjoko Krstic - <gjoko@zeroscience.mk>)
+
+ 3.5
+ - Release new version
+ - MB string support for charlist
+ - Modify audio file path to use language directories
+ - Changed default captcha appearance
+
  3.2RC4
- - Add MySQL, PostgreSQL, and SQLite3 support for database storage 
+ - Add MySQL, PostgreSQL, and SQLite3 support for database storage
  - Deprecate "use_sqlite_db" option and remove SQLite2/sqlite_* functions
  - Add new captcha type that displays 2 dictionary words on one image
  - Update examples
@@ -147,7 +156,7 @@
 /**
  * Securimage CAPTCHA Class.
  *
- * @version    3.0
+ * @version    3.5
  * @package    Securimage
  * @subpackage classes
  * @author     Drew Phillips <drew@drew-phillips.com>
@@ -190,31 +199,31 @@ class Securimage
      * @var int
      */
     const SI_CAPTCHA_WORDS      = 2;
-    
+
     /**
      * MySQL option identifier for database storage option
-     * 
+     *
      * @var string
      */
     const SI_DRIVER_MYSQL   = 'mysql';
-    
+
     /**
      * PostgreSQL option identifier for database storage option
-     * 
+     *
      * @var string
      */
     const SI_DRIVER_PGSQL   = 'pgsql';
-    
+
     /**
      * SQLite option identifier for database storage option
-     * 
+     *
      * @var string
      */
     const SI_DRIVER_SQLITE3 = 'sqlite';
 
     /*%*********************************************************************%*/
     // Properties
-    
+
     /**
      * The width of the captcha image
      * @var int
@@ -256,12 +265,12 @@ class Securimage
      * How transparent to make the text 0 = completely opaque, 100 = invisible
      * @var int
      */
-    public $text_transparency_percentage = 50;
+    public $text_transparency_percentage = 20;
     /**
      * Whether or not to draw the text transparently, true = use transparency, false = no transparency
      * @var bool
      */
-    public $use_transparent_text         = false;
+    public $use_transparent_text         = true;
 
     /**
      * The length of the captcha code
@@ -301,17 +310,17 @@ class Securimage
      * The level of distortion, 0.75 = normal, 1.0 = very high distortion
      * @var double
      */
-    public $perturbation = 0.75;
+    public $perturbation = 0.85;
     /**
      * How many lines to draw over the captcha code to increase security
      * @var int
      */
-    public $num_lines    = 8;
+    public $num_lines    = 5;
     /**
      * The level of noise (random dots) to place on the image, 0-10
      * @var int
      */
-    public $noise_level  = 0;
+    public $noise_level  = 2;
 
     /**
      * The signature text to draw on the bottom corner of the image
@@ -337,73 +346,73 @@ class Securimage
      * @deprecated 3.2RC4
      */
     public $use_sqlite_db = false;
-    
+
     /**
      * Use a database backend for code storage.
      * Provides a fallback to users with cookies disabled.
      * Required when using captcha IDs.
-     * 
+     *
      * @see Securimage::$database_driver
      * @var bool
      */
     public $use_database = false;
-    
+
     /**
      * Database driver to use for database support.
      * Allowable values: 'mysql', 'pgsql', 'sqlite'.
      * Default: sqlite
-     * 
+     *
      * @var string
      */
     public $database_driver = self::SI_DRIVER_SQLITE3;
-    
+
     /**
      * Database host to connect to when using mysql or postgres
      * On Linux use "localhost" for Unix domain socket, otherwise uses TCP/IP
      * Does not apply to SQLite
-     * 
+     *
      * @var string
      */
     public $database_host   = 'localhost';
-    
+
     /**
      * Database username for connection (mysql, postgres only)
      * Default is an empty string
-     * 
-     * @var string 
+     *
+     * @var string
      */
     public $database_user   = '';
-    
+
     /**
      * Database password for connection (mysql, postgres only)
      * Default is empty string
-     * 
+     *
      * @var string
      */
     public $database_pass   = '';
-    
+
     /**
      * Name of the database to select (mysql, postgres only)
-     * 
+     *
      * @see Securimage::$database_file for SQLite
      * @var string
      */
     public $database_name   = '';
-    
+
     /**
      * Database table where captcha codes are stored
      * Note: Securimage will attempt to create this table for you if it does
      * not exist.  If the table cannot be created, an E_USER_WARNING is emitted.
-     * 
+     *
      * @var string
      */
     public $database_table  = 'captcha_codes';
-    
+
     /**
      * Fully qualified path to the database file when using SQLite3.
      * This value is only used when $database_driver == sqlite3 and does
      * not apply when no database is used, or when using MySQL or PostgreSQL.
-     * 
+     *
      * @var string
      */
     public $database_file;
@@ -457,7 +466,7 @@ class Securimage
      * The path to the securimage audio directory, can be set in securimage_play.php
      * @var string
      * <code>
-     * $img->audio_path = '/home/yoursite/public_html/securimage/audio/';
+     * $img->audio_path = '/home/yoursite/public_html/securimage/audio/en/';
      * </code>
      */
     public $audio_path;
@@ -534,7 +543,7 @@ class Securimage
     protected $bgimg;
     protected $iscale = 5;
 
-    protected $securimage_path = null;
+    public $securimage_path = null;
 
     /**
      * The captcha challenge value (either the case-sensitive/insensitive word captcha, or the solution to the math captcha)
@@ -590,7 +599,7 @@ class Securimage
 
     /**
      * PDO connection when a database is used
-     * 
+     *
      * @var resource
      */
     protected $pdo_conn;
@@ -655,11 +664,11 @@ class Securimage
         }
 
         if (is_null($this->audio_path)) {
-            $this->audio_path = $this->securimage_path . '/audio/';
+            $this->audio_path = $this->securimage_path . '/audio/en/';
         }
 
         if (is_null($this->audio_noise_path)) {
-            $this->audio_noise_path = $this->audio_path . '/noise/';
+            $this->audio_noise_path = $this->securimage_path . '/audio/noise/';
         }
 
         if (is_null($this->audio_use_noise)) {
@@ -742,7 +751,7 @@ class Securimage
 
     /**
      * Validate a captcha code input against a captcha ID
-     * 
+     *
      * @param string $id       The captcha ID to check
      * @param string $value    The captcha value supplied by the user
      * @param array  $options  Array of options to construct Securimage with.
@@ -756,9 +765,9 @@ class Securimage
         $opts = array('captchaId'    => $id,
                       'no_session'   => true,
                       'use_database' => true);
-        
+
         if (sizeof($options) > 0) $opts = array_merge($options, $opts);
-        
+
         $si = new self($opts);
 
         if ($si->openDatabase()) {
@@ -771,7 +780,7 @@ class Securimage
 
             if ($si->check($value)) {
                 $si->clearCodeFromDatabase();
-                
+
                 return true;
             } else {
                 return false;
@@ -892,7 +901,7 @@ class Securimage
         $code = '';
         $time = 0;
         $disp = 'error';
-        
+
         if ($returnExisting && strlen($this->code) > 0) {
             if ($array) {
                 return array('code' => $this->code,
@@ -916,7 +925,7 @@ class Securimage
             }
         }
 
-        if ($this->use_database == true && $this->pdo_conn) {
+        if (empty($code) && $this->use_database) {
             // no code in session - may mean user has cookies turned off
             $this->openDatabase();
             $code = $this->getCodeFromDatabase();
@@ -1114,7 +1123,7 @@ class Securimage
             closedir($dh);
 
             if (sizeof($images) > 0) {
-                return rtrim($this->background_directory, '/') . '/' . $images[rand(0, sizeof($images)-1)];
+                return rtrim($this->background_directory, '/') . '/' . $images[mt_rand(0, sizeof($images)-1)];
             }
         }
 
@@ -1133,9 +1142,9 @@ class Securimage
             {
                 do {
                     $signs = array('+', '-', 'x');
-                    $left  = rand(1, 10);
-                    $right = rand(1, 5);
-                    $sign  = $signs[rand(0, 2)];
+                    $left  = mt_rand(1, 10);
+                    $right = mt_rand(1, 5);
+                    $sign  = $signs[mt_rand(0, 2)];
 
                     switch($sign) {
                         case 'x': $c = $left * $right; break;
@@ -1148,7 +1157,7 @@ class Securimage
                 $this->code_display = "$left $sign $right";
                 break;
             }
-            
+
             case self::SI_CAPTCHA_WORDS:
                 $words = $this->readCodeFromFile(2);
                 $this->code = implode(' ', $words);
@@ -1219,9 +1228,9 @@ class Securimage
         $numpoles = 3; // distortion factor
         // make array of poles AKA attractor points
         for ($i = 0; $i < $numpoles; ++ $i) {
-            $px[$i]  = rand($this->image_width  * 0.2, $this->image_width  * 0.8);
-            $py[$i]  = rand($this->image_height * 0.2, $this->image_height * 0.8);
-            $rad[$i] = rand($this->image_height * 0.2, $this->image_height * 0.8);
+            $px[$i]  = mt_rand($this->image_width  * 0.2, $this->image_width  * 0.8);
+            $py[$i]  = mt_rand($this->image_height * 0.2, $this->image_height * 0.8);
+            $rad[$i] = mt_rand($this->image_height * 0.2, $this->image_height * 0.8);
             $tmp     = ((- $this->frand()) * 0.15) - .15;
             $amp[$i] = $this->perturbation * $tmp;
         }
@@ -1270,12 +1279,12 @@ class Securimage
         for ($line = 0; $line < $this->num_lines; ++ $line) {
             $x = $this->image_width * (1 + $line) / ($this->num_lines + 1);
             $x += (0.5 - $this->frand()) * $this->image_width / $this->num_lines;
-            $y = rand($this->image_height * 0.1, $this->image_height * 0.9);
+            $y = mt_rand($this->image_height * 0.1, $this->image_height * 0.9);
 
             $theta = ($this->frand() - 0.5) * M_PI * 0.7;
             $w = $this->image_width;
-            $len = rand($w * 0.4, $w * 0.7);
-            $lwid = rand(0, 2);
+            $len = mt_rand($w * 0.4, $w * 0.7);
+            $lwid = mt_rand(0, 2);
 
             $k = $this->frand() * 0.6 + 0.2;
             $k = $k * $k * 0.5;
@@ -1318,9 +1327,9 @@ class Securimage
         $height = $this->image_height * $this->iscale;
         $width  = $this->image_width * $this->iscale;
         for ($i = 0; $i < $noise_level; ++$i) {
-            $x = rand(10, $width);
-            $y = rand(10, $height);
-            $size = rand(7, 10);
+            $x = mt_rand(10, $width);
+            $y = mt_rand(10, $height);
+            $size = mt_rand(7, 10);
             if ($x - $size <= 0 && $y - $size <= 0) continue; // dont cover 0,0 since it is used by imagedistortedcopy
             imagefilledarc($this->tmpimg, $x, $y, $size, $size, 0, 360, $this->gdnoisecolor, IMG_ARC_PIE);
         }
@@ -1451,32 +1460,32 @@ class Securimage
 
         $fsize = filesize($this->wordlist_file);
         if ($fsize < 128) return false; // too small of a list to be effective
-        
+
         if ((int)$numWords < 1 || (int)$numWords > 5) $numWords = 1;
 
         $words = array();
         $i = 0;
         do {
-            fseek($fp, rand(0, $fsize - 64), SEEK_SET); // seek to a random position of file from 0 to filesize-64
+            fseek($fp, mt_rand(0, $fsize - 64), SEEK_SET); // seek to a random position of file from 0 to filesize-64
             $data = fread($fp, 64); // read a chunk from our random position
             $data = preg_replace("/\r?\n/", "\n", $data);
-    
+
             $start = @strpos($data, "\n", mt_rand(0, 56)) + 1; // random start position
             $end   = @strpos($data, "\n", $start);          // find end of word
-            
+
             if ($start === false) {
                 // picked start position at end of file
                 continue;
             } else if ($end === false) {
                 $end = strlen($data);
             }
-    
+
             $word = strtolower(substr($data, $start, $end - $start)); // return a line of the file
             $words[] = $word;
         } while (++$i < $numWords);
-        
+
         fclose($fp);
-        
+
         if ($numWords < 2) {
             return $words[0];
         } else {
@@ -1491,11 +1500,15 @@ class Securimage
     {
         $code = '';
 
-        for($i = 1, $cslen = strlen($this->charset); $i <= $this->code_length; ++$i) {
-            $code .= $this->charset{rand(0, $cslen - 1)};
+        if (function_exists('mb_strlen')) {
+            for($i = 1, $cslen = mb_strlen($this->charset); $i <= $this->code_length; ++$i) {
+                $code .= mb_substr($this->charset, mt_rand(0, $cslen - 1), 1, 'UTF-8');
+            }
+        } else {
+            for($i = 1, $cslen = strlen($this->charset); $i <= $this->code_length; ++$i) {
+                $code .= substr($this->charset, mt_rand(0, $cslen - 1), 1);
+            }
         }
-
-        //return 'testing';  // debug, set the code to given string
 
         return $code;
     }
@@ -1531,7 +1544,7 @@ class Securimage
                 $code_entered = preg_replace('/\s+/', ' ', $code_entered);
                 $code_entered = strtolower($code_entered);
             }
-            
+
             if ($code == $code_entered) {
                 $this->correct_code = true;
                 if ($this->no_session != true) {
@@ -1559,7 +1572,10 @@ class Securimage
             $_SESSION['securimage_code_value'][$this->namespace] = $this->code;
             $_SESSION['securimage_code_ctime'][$this->namespace] = time();
         }
-        $this->saveCodeToDatabase();
+
+        if ($this->use_database) {
+            $this->saveCodeToDatabase();
+        }
     }
 
     /**
@@ -1573,31 +1589,31 @@ class Securimage
         if ($this->use_database && $this->pdo_conn) {
             $id = $this->getCaptchaId(false);
             $ip = $_SERVER['REMOTE_ADDR'];
-            
+
             if (empty($id)) {
                 $id = $ip;
             }
-            
+
             $time      = time();
             $code      = $this->code;
             $code_disp = $this->code_display;
 
             // This is somewhat expensive in PDO Sqlite3 (when there is something to delete)
             $this->clearCodeFromDatabase();
-            
+
             $query = "INSERT INTO {$this->database_table} ("
                     ."id, code, code_display, namespace, created) "
                     ."VALUES(?, ?, ?, ?, ?)";
-            
+
             $stmt    = $this->pdo_conn->prepare($query);
             $success = $stmt->execute(array($id, $code, $code_disp, $this->namespace, $time));
-            
+
             if (!$success) {
                 $err = $stmt->errorInfo();
                 trigger_error("Failed to insert code into database. {$err[1]}: {$err[2]}", E_USER_WARNING);
             }
         }
-        
+
         return $success !== false;
     }
 
@@ -1607,16 +1623,16 @@ class Securimage
     protected function openDatabase()
     {
         $this->pdo_conn = false;
-        
+
         if ($this->use_database) {
             $pdo_extension = 'PDO_' . strtoupper($this->database_driver);
-            
+
             if (!extension_loaded($pdo_extension)) {
                 trigger_error("Database support is turned on in Securimage, but the chosen extension $pdo_extension is not loaded in PHP.", E_USER_WARNING);
                 return false;
             }
         }
-        
+
         if ($this->database_driver == self::SI_DRIVER_SQLITE3) {
             if (!file_exists($this->database_file)) {
                 $fp = fopen($this->database_file, 'w+');
@@ -1627,6 +1643,9 @@ class Securimage
                 }
                 fclose($fp);
                 chmod($this->database_file, 0666);
+            } else if (!is_writeable($this->database_file)) {
+                trigger_error("Securimage does not have read/write access to database file '{$this->database_file}. Make sure permissions are 0666 and writeable by user '" . get_current_user() . "'", E_USER_WARNING);
+                return false;
             }
         }
 
@@ -1639,7 +1658,7 @@ class Securimage
             trigger_error("Database connection failed: " . $pdoex->getMessage(), E_USER_WARNING);
             return false;
         }
-        
+
         try {
             if (!$this->checkTablesExist()) {
                 // create tables...
@@ -1651,18 +1670,22 @@ class Securimage
             return false;
         }
 
+        if (mt_rand(0, 100) / 100.0 == 1.0) {
+            $this->purgeOldCodesFromDatabase();
+        }
+
         return $this->pdo_conn;
     }
-    
+
     protected function getDsn()
     {
         $dsn = sprintf('%s:', $this->database_driver);
-        
+
         switch($this->database_driver) {
             case self::SI_DRIVER_SQLITE3:
                 $dsn .= $this->database_file;
                 break;
-                
+
             case self::SI_DRIVER_MYSQL:
             case self::SI_DRIVER_PGSQL:
                 $dsn .= sprintf('host=%s;dbname=%s',
@@ -1671,41 +1694,41 @@ class Securimage
                 break;
 
         }
-        
+
         return $dsn;
     }
-    
+
     protected function checkTablesExist()
     {
         $table = $this->pdo_conn->quote($this->database_table);
-        
+
         switch($this->database_driver) {
             case self::SI_DRIVER_SQLITE3:
                 // query row count for sqlite, PRAGMA queries seem to return no
                 // rowCount using PDO even if there are rows returned
                 $query = "SELECT COUNT(id) FROM $table";
                 break;
-                
+
             case self::SI_DRIVER_MYSQL:
                 $query = "SHOW TABLES LIKE $table";
                 break;
-                
+
             case self::SI_DRIVER_PGSQL:
                 $query = "SELECT * FROM information_schema.columns WHERE table_name = $table;";
                 break;
         }
-        
+
         $result = $this->pdo_conn->query($query);
-        
+
         if (!$result) {
             $err = $this->pdo_conn->errorInfo();
-            
+
             if ($this->database_driver == self::SI_DRIVER_SQLITE3 &&
                 $err[1] === 1 && strpos($err[2], 'no such table') !== false)
             {
                 return false;
             }
-            
+
             throw new Exception("Failed to check tables: {$err[0]} - {$err[1]}: {$err[2]}");
         } else if ($this->database_driver == self::SI_DRIVER_SQLITE3) {
             // successful here regardless of row count for sqlite
@@ -1720,7 +1743,7 @@ class Securimage
     protected function createDatabaseTables()
     {
         $queries = array();
-        
+
         switch($this->database_driver) {
             case self::SI_DRIVER_SQLITE3:
                 $queries[] = "CREATE TABLE \"{$this->database_table}\" (
@@ -1731,10 +1754,10 @@ class Securimage
                                 created INTEGER NOT NULL,
                                 PRIMARY KEY(id, namespace)
                               )";
-                
+
                 $queries[] = "CREATE INDEX ndx_created ON {$this->database_table} (created)";
                 break;
-                
+
             case self::SI_DRIVER_MYSQL:
                 $queries[] = "CREATE TABLE `{$this->database_table}` (
                                 `id` VARCHAR(40) NOT NULL,
@@ -1746,7 +1769,7 @@ class Securimage
                                 INDEX(created)
                               )";
                 break;
-                
+
             case self::SI_DRIVER_PGSQL:
                 $queries[] = "CREATE TABLE {$this->database_table} (
                                 id character varying(40) NOT NULL,
@@ -1756,16 +1779,16 @@ class Securimage
                                 created integer NOT NULL,
                                 CONSTRAINT pkey_id_namespace PRIMARY KEY (id, namespace)
                               )";
-                
+
                 $queries[] = "CREATE INDEX ndx_created ON {$this->database_table} (created);";
                 break;
         }
-        
+
         $this->pdo_conn->beginTransaction();
-        
+
         foreach($queries as $query) {
             $result = $this->pdo_conn->query($query);
-        
+
             if (!$result) {
                 $err = $this->pdo_conn->errorInfo();
                 trigger_error("Failed to create table.  {$err[1]}: {$err[2]}", E_USER_WARNING);
@@ -1774,12 +1797,12 @@ class Securimage
                 return false;
             }
         }
-        
+
         $this->pdo_conn->commit();
-        
+
         return true;
     }
-    
+
     /**
      * Get a code from the sqlite database for ip address/captchaId.
      *
@@ -1799,13 +1822,13 @@ class Securimage
             } else {
                 $ip = $_SERVER['REMOTE_ADDR'];
                 $ns = $this->namespace;
-                
+
                 // ip is stored in id column when no captchaId
                 $query  = "SELECT * FROM {$this->database_table} WHERE id = ? AND namespace = ?";
                 $stmt   = $this->pdo_conn->prepare($query);
                 $result = $stmt->execute(array($ip, $ns));
             }
-            
+
             if (!$result) {
                 $err = $this->pdo_conn->errorInfo();
                 trigger_error("Failed to select code from database.  {$err[0]}: {$err[1]}", E_USER_WARNING);
@@ -1823,7 +1846,7 @@ class Securimage
                 }
             }
         }
-        
+
         return $code;
     }
 
@@ -1836,13 +1859,13 @@ class Securimage
             $ip = $_SERVER['REMOTE_ADDR'];
             $ns = $this->pdo_conn->quote($this->namespace);
             $id = Securimage::$_captchaId;
-            
+
             if (empty($id)) {
                 $id = $ip; // if no captchaId set, IP address is captchaId.
             }
-            
+
             $id = $this->pdo_conn->quote($id);
-            
+
             $query = sprintf("DELETE FROM %s WHERE id = %s AND namespace = %s",
                              $this->database_table, $id, $ns);
 
@@ -1861,12 +1884,12 @@ class Securimage
         if ($this->use_database && $this->pdo_conn) {
             $now   = time();
             $limit = (!is_numeric($this->expiry_time) || $this->expiry_time < 1) ? 86400 : $this->expiry_time;
-            
+
             $query = sprintf("DELETE FROM %s WHERE %s - created > %s",
                              $this->database_table,
                              $this->pdo_conn->quote($now, PDO::PARAM_INT),
                              $this->pdo_conn->quote($limit, PDO::PARAM_INT));
-            
+
             $result = $this->pdo_conn->query($query);
         }
     }
@@ -1945,11 +1968,11 @@ class Securimage
                 // in order to add more randomness
                 $randOffset = 0;
                 if ($wavNoise->getNumBlocks() > 2 * $wavCaptcha->getNumBlocks()) {
-                    $randBlock = rand(0, $wavNoise->getNumBlocks() - $wavCaptcha->getNumBlocks());
+                    $randBlock = mt_rand(0, $wavNoise->getNumBlocks() - $wavCaptcha->getNumBlocks());
                     $wavNoise->readWavData($randBlock * $wavNoise->getBlockAlign(), $wavCaptcha->getNumBlocks() * $wavNoise->getBlockAlign());
                 } else {
                     $wavNoise->readWavData();
-                    $randOffset = rand(0, $wavNoise->getNumBlocks() - 1);
+                    $randOffset = mt_rand(0, $wavNoise->getNumBlocks() - 1);
                 }
 
 
@@ -1965,7 +1988,7 @@ class Securimage
         if ($this->degrade_audio == true) {
             // add random noise.
             // any noise level below 95% is intensely distorted and not pleasant to the ear
-            $filters[WavFile::FILTER_DEGRADE] = rand(95, 98) / 100.0;
+            $filters[WavFile::FILTER_DEGRADE] = mt_rand(95, 98) / 100.0;
         }
 
         if (!empty($filters)) {
@@ -2007,7 +2030,7 @@ class Securimage
      */
     protected function audioError()
     {
-        return @file_get_contents(dirname(__FILE__) . '/audio/error.wav');
+        return @file_get_contents(dirname(__FILE__) . '/audio/en/error.wav');
     }
 
     /**
@@ -2035,7 +2058,7 @@ class Securimage
      */
     function frand()
     {
-        return 0.0001 * rand(0,9999);
+        return 0.0001 * mt_rand(0,9999);
     }
 
     /**

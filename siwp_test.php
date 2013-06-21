@@ -76,7 +76,7 @@ if (isset($_GET['testimage']) && $_GET['testimage'] == '1') {
     imagestring($im, 2, 150, 20, '(: (: (:', $black);
     imagestring($im, 2, 168, 30, '(: (:', $black);
     imagestring($im, 2, 186, 40, '(:', $black);
-    
+
     header('Content-type: image/png');
     imagepng($im, null, 3);
     exit;
@@ -87,7 +87,7 @@ function session_test()
 	if (!isset($_GET['testimage'])) {
 		if (isset($_GET['tested'])) {
 			if (!isset($_SESSION['securimage_test_value'])) {
-				$GLOBALS['session_start_error'] = 
+				$GLOBALS['session_start_error'] =
 					"The session started successfully, but the test value "
 				   ."was not found.<br />Click <a href=\"{$_SERVER['PHP_SELF']}\">"
 				   ."here</a> to try the test again.<br />Make sure cookies are enabled in your browser.<br />";
@@ -110,7 +110,7 @@ function session_test()
 				    .' and error as possible, and we can help resolve the issue.';
 				exit;
 			}
-			
+
 			$_SESSION['securimage_test_value'] = 'test';
 			header('Location: ' . $_SERVER['PHP_SELF'] . '?tested=1');
 			exit;
@@ -191,7 +191,7 @@ There is a warning, but otherwise you meet the requirements for using Securimage
 Your server meets the requirements for using Securimage!
 <?php endif; ?>
 <br /><br />
-<img src="<?php echo $_SERVER['PHP_SELF']; ?>?testimage=1" alt="Test Image" align="bottom" />
+<img src="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>?testimage=1" alt="Test Image" align="bottom" />
 <?php else: ?>
 Based on the requirements, you do not have what it takes to run Securimage :(
 <?php endif; ?>
