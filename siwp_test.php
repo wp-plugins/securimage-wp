@@ -2,7 +2,7 @@
 
 /**
  * Securimage Test Script
- * Version 3.1 - 2012-04-06
+ * Version 3.5 - 2013-03-29
  *
  * Upload this PHP script to your web server and call it from the browser.
  * The script will tell you if you meet the requirements for running Securimage.
@@ -10,7 +10,7 @@
  *
  * http://www.phpcaptcha.org
  */
-/*  Copyright (C) 2012 Drew Phillips  (http://phpcaptcha.org/download/securimage-wp)
+/*  Copyright (C) 2015 Drew Phillips  (http://phpcaptcha.org/download/securimage-wp)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -32,14 +32,15 @@ require_once dirname(__FILE__) . '/../../../wp-load.php';
 if (!current_user_can('administrator')) exit;
 
 if (version_compare(PHP_VERSION, '5.2.0', '<')) {
-	echo 'Securimage requires PHP 5.2.0 or greater in order to run.  You are '
-	    .'using ' . PHP_VERSION . ' which is very outdated.  Please consider '
-	    .'upgrading to a newer, more secure version of PHP.<br /<br />'
-	    .'Alternatively, you can use Securimage 2.0, but it is not advised.';
-	exit;
+    echo 'Securimage requires PHP 5.2.0 or greater in order to run.  You are '
+        .'using ' . PHP_VERSION . ' which is very outdated.  Please consider '
+        .'upgrading to a newer, more secure version of PHP.<br /<br />'
+        .'Alternatively, you can use Securimage 2.0, but it is not advised.';
+    exit;
 }
 
 $GLOBALS['session_start_error'] = null;
+
 
 $level = error_reporting(0);
 set_error_handler('session_error_handler', E_ALL);
@@ -76,7 +77,7 @@ if (isset($_GET['testimage']) && $_GET['testimage'] == '1') {
     imagestring($im, 2, 150, 20, '(: (: (:', $black);
     imagestring($im, 2, 168, 30, '(: (:', $black);
     imagestring($im, 2, 186, 40, '(:', $black);
-
+    
     header('Content-type: image/png');
     imagepng($im, null, 3);
     exit;
@@ -84,38 +85,38 @@ if (isset($_GET['testimage']) && $_GET['testimage'] == '1') {
 
 function session_test()
 {
-	if (!isset($_GET['testimage'])) {
-		if (isset($_GET['tested'])) {
-			if (!isset($_SESSION['securimage_test_value'])) {
-				$GLOBALS['session_start_error'] =
-					"The session started successfully, but the test value "
-				   ."was not found.<br />Click <a href=\"{$_SERVER['PHP_SELF']}\">"
-				   ."here</a> to try the test again.<br />Make sure cookies are enabled in your browser.<br />";
-			}
-		} else {
-			if ($GLOBALS['session_start_error'] != null) {
-				echo '<strong>Failed to start the PHP session.</strong><br /><br />'
-				    .'The <a href="http://php.net/sessions" target="_blank">session</a>'
-				    .' did not start properly.  This could indicate a problem '
-				    .'the PHP configuration on this server.<br /><br />'
-				    .'The following error occurred when attempting to call <i>session_start()</i>:<br />'
-				    .'<pre style="margin: 25px">' . htmlspecialchars($GLOBALS['session_start_error']) . '</pre>'
-				    .'<span style="color: #f00">In order for Securimage to work, you '
-				    .'must resolve the error.</span><br /><br />'
-				    .'If after searching <a href="https://google.com" target="_blank">Google</a> '
-				    .'and <a href="http://stackoverflow.com/search" target="_blank">StackOverflow</a> '
-				    .'for causes to the problem and you still cannot resolve the error, contact '
-				    .'<a href="http://phpcaptcha.org/contact" target="_blank">the developers</a> '
-				    .'of Securimage for assistance.<br />Provide as much information about the problem '
-				    .' and error as possible, and we can help resolve the issue.';
-				exit;
-			}
-
-			$_SESSION['securimage_test_value'] = 'test';
-			header('Location: ' . $_SERVER['PHP_SELF'] . '?tested=1');
-			exit;
-		}
-	}
+    if (!isset($_GET['testimage'])) {
+        if (isset($_GET['tested'])) {
+            if (!isset($_SESSION['securimage_test_value'])) {
+                $GLOBALS['session_start_error'] = 
+                    "The session started successfully, but the test value "
+                   ."was not found.<br />Click <a href=\"{$_SERVER['PHP_SELF']}\">"
+                   ."here</a> to try the test again.<br />Make sure cookies are enabled in your browser.<br />";
+            }
+        } else {
+            if ($GLOBALS['session_start_error'] != null) {
+                echo '<strong>Failed to start the PHP session.</strong><br /><br />'
+                    .'The <a href="http://php.net/sessions" target="_blank">session</a>'
+                    .' did not start properly.  This could indicate a problem '
+                    .'the PHP configuration on this server.<br /><br />'
+                    .'The following error occurred when attempting to call <i>session_start()</i>:<br />'
+                    .'<pre style="margin: 25px">' . htmlspecialchars($GLOBALS['session_start_error']) . '</pre>'
+                    .'<span style="color: #f00">In order for Securimage to work, you '
+                    .'must resolve the error.</span><br /><br />'
+                    .'If after searching <a href="https://google.com" target="_blank">Google</a> '
+                    .'and <a href="http://stackoverflow.com/search" target="_blank">StackOverflow</a> '
+                    .'for causes to the problem and you still cannot resolve the error, contact '
+                    .'<a href="http://phpcaptcha.org/contact" target="_blank">the developers</a> '
+                    .'of Securimage for assistance.<br />Provide as much information about the problem '
+                    .' and error as possible, and we can help resolve the issue.';
+                exit;
+            }
+            
+            $_SESSION['securimage_test_value'] = 'test';
+            header('Location: ' . $_SERVER['PHP_SELF'] . '?tested=1');
+            exit;
+        }
+    }
 }
 
 function print_status($supported)
@@ -129,8 +130,8 @@ function print_status($supported)
 
 function session_error_handler($errno, $errstr, $errfile, $errline)
 {
-	$GLOBALS['session_start_error'] = $errstr;
-	return true;
+    $GLOBALS['session_start_error'] = $errstr;
+    return true;
 }
 
 ?>
@@ -175,11 +176,27 @@ function session_error_handler($errno, $errstr, $errfile, $errline)
 <li><strong>GIF Create Support:</strong>
 <?php print_status($gd_support && $gd_info['GIF Create Support']); ?></li>
 <li><strong>SQLite Support:</strong>
-<?php print_status(function_exists('sqlite_open')); ?><br />
-<?php if (function_exists('sqlite_open')): ?>
+<?php print_status(extension_loaded('pdo_sqlite')); ?><br />
+<?php if (extension_loaded('pdo_sqlite')): ?>
 SQLite is available.  If you choose to use it, Securimage can support users who do not accept cookies.
 <?php else: ?>
 No SQLite support. Securimage will work but your visitors must accept cookies.
+<?php endif; ?>
+</li>
+<li><strong>MySQL Support:</strong>
+<?php print_status(extension_loaded('pdo_mysql')); ?><br />
+<?php if (extension_loaded('pdo_mysql')): ?>
+MySQL is available.  If you choose to use it, Securimage can support users who do not accept cookies by storing codes in MySQL.
+<?php else: ?>
+No MySQL support. Securimage will work but your visitors must accept cookies.
+<?php endif; ?>
+</li>
+<li><strong>PostgreSQL Support:</strong>
+<?php print_status(extension_loaded('pdo_pgsql')); ?><br />
+<?php if (extension_loaded('pdo_pgsql')): ?>
+PostgreSQL is available.
+<?php else: ?>
+No PostgreSQL support.
 <?php endif; ?>
 </li>
 </ul>
@@ -191,7 +208,7 @@ There is a warning, but otherwise you meet the requirements for using Securimage
 Your server meets the requirements for using Securimage!
 <?php endif; ?>
 <br /><br />
-<img src="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>?testimage=1" alt="Test Image" align="bottom" />
+<img src="<?php echo $_SERVER['PHP_SELF']; ?>?testimage=1" alt="Test Image" align="bottom" />
 <?php else: ?>
 Based on the requirements, you do not have what it takes to run Securimage :(
 <?php endif; ?>
