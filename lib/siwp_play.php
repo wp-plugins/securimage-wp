@@ -5,7 +5,7 @@
 Plugin URI: http://phpcaptcha.org/download/wordpress-plugin
 Description: Adds CAPTCHA protection to comment forms on posts and pages
 Author: Drew Phillips
-Version: 3.2-WP
+Version: 3.5.4-WP
 Author URI: http://www.phpcaptcha.org/
 License: GPL2
 */
@@ -33,9 +33,9 @@ $captchaId = (isset($_GET['id']) && strlen($_GET['id']) == 40) ?
              sha1(uniqid($_SERVER['REMOTE_ADDR'] . $_SERVER['REMOTE_PORT']));
 
 $options = array(
-	'captchaId' => $captchaId,
-	'no_session' => true,
-	'use_database' => false
+    'captchaId' => $captchaId,
+    'no_session' => true,
+    'use_database' => false
 );
 
 $img = new Securimage($options);
@@ -45,21 +45,20 @@ set_error_handler(array(&$img, 'errorHandler')); // set this early, WP omits a l
 require_once dirname(__FILE__) . '/../../../../wp-load.php'; // backwards "lib/securimage-wp/plugins/wp-content/"
 
 if (get_option('siwp_disable_audio', 0) == 1) {
-	exit;
+    exit;
 }
 
 $result = siwp_get_code_from_database($captchaId);
 
 if ($result == null) {
-	$code = siwp_generate_code($captchaId, $img);
+    $code = siwp_generate_code($captchaId, $img);
 
-	$code_display = $code['display'];
+    $code_display = $code['display'];
 } else {
-	$code_display = $result->code_display;
+    $code_display = $result->code_display;
 }
 
 $img->display_value = $code_display;
-
 
 // To use an alternate language, uncomment the following and download the files from phpcaptcha.org
 // $img->audio_path = $img->securimage_path . '/audio/es/';
