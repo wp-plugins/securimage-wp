@@ -69,13 +69,14 @@ function siwp_install()
 	}
 }
 
-function siwp_captcha_html()
+function siwp_captcha_html($post_id = 0, $forceDisplay = false)
 {
     $position_fix = get_option('siwp_position_fix', 0);
     $captcha_html = "<div id=\"siwp_captcha_input\">\n";
     
-    if (is_user_logged_in() && current_user_can('administrator')) {
-        $captcha_html .= '<div style="font-size: 1.2em; text-align: center">Securimage-WP CAPTCHA would appear here if you were not logged in as a WordPress administrator :)</div>';    } else {
+    if (!$forceDisplay && is_user_logged_in() && current_user_can('administrator')) {
+        $captcha_html .= '<div style="font-size: 1.2em; text-align: center">Securimage-WP CAPTCHA would appear here if you were not logged in as a WordPress administrator :)</div>';
+    } else {
     	$show_protected_by = get_option('siwp_show_protected_by', 0);
     	$disable_audio	   = get_option('siwp_disable_audio', 0);
     	$flash_bgcol	   = get_option('siwp_flash_bgcol', '#ffffff');
@@ -418,7 +419,7 @@ function siwp_get_sequence_list()
 
 require_once ABSPATH . '/wp-includes/pluggable.php';
 
-add_action('comment_form', 'siwp_captcha_html');
+add_action('comment_form', 'siwp_captcha_html', 10, 1);
 add_action('preprocess_comment', 'siwp_check_captcha', 0);
 
 
@@ -800,7 +801,7 @@ function siwp_plugin_options()
 	</form>
 
 	<p>Image Preview:</p>
-	<?php echo siwp_captcha_html() ?>
+	<?php echo siwp_captcha_html(0, true) ?>
 
 	</div>
 
