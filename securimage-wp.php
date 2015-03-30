@@ -4,11 +4,11 @@ Plugin Name: Securimage-WP
 Plugin URI: http://phpcaptcha.org/download/wordpress-plugin
 Description: Adds CAPTCHA protection to comment forms on posts and pages
 Author: Drew Phillips
-Version: 3.5.1
+Version: 3.5.4
 Author URI: http://www.phpcaptcha.org/
 */
 
-/*  Copyright (C) 2013 Drew Phillips  (http://phpcaptcha.org/download/securimage-wp)
+/*  Copyright (C) 2015 Drew Phillips  (http://phpcaptcha.org/download/securimage-wp)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -62,168 +62,178 @@ function siwp_install()
 
 	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 	dbDelta($sql);
+	
+	$defaultStyle = array_shift(siwp_get_sequence_list());
+	if (get_option('siwp_display_sequence', null) === null) {
+	    update_option('siwp_display_sequence', $defaultStyle);
+	}
 }
 
-function siwp_captcha_html()
+function siwp_captcha_html($post_id = 0, $forceDisplay = false)
 {
-	$show_protected_by = get_option('siwp_show_protected_by', 1);
-	$disable_audio	   = get_option('siwp_disable_audio', 0);
-	$flash_bgcol	   = get_option('siwp_flash_bgcol', '#ffffff');
-	$flash_icon		   = get_option('siwp_flash_icon', siwp_default_flash_icon());
-	$position_fix	   = get_option('siwp_position_fix', 0);
-	$refresh_text	   = get_option('siwp_refresh_text', 'Different Image');
-	$use_refresh_text  = get_option('siwp_use_refresh_text', 0);
-	$imgclass		   = get_option('siwp_css_clsimg', '');
-	$labelclass		   = get_option('siwp_css_clslabel', '');
-	$inputclass		   = get_option('siwp_css_clsinput', '');
-	$imgstyle		   = get_option('siwp_css_cssimg');
-	$labelstyle		   = get_option('siwp_css_csslabel');
-	$inputstyle		   = get_option('siwp_css_cssinput');
-	$expireTime		   = siwp_get_captcha_expiration();
-	$display_sequence  = get_option('siwp_display_sequence', 'captcha-input-label');
-	$display_sequence  = preg_replace('/\s|\(.*?\)/', '', $display_sequence);
-	$captchaId		   = sha1(uniqid($_SERVER['REMOTE_ADDR'] . $_SERVER['REMOTE_PORT']));
-	$plugin_url		   = siwp_get_plugin_url();
-
-	$captcha_html = "<div id=\"siwp_captcha_input\">\n";
-	$captcha_html .=
-	"<script type=\"text/javascript\">
-	<!--
-	function siwp_refresh() {
-	    // get new captcha id, refresh the image w/ new id, and update form input with new id
-		var cid = siwp_genid();
-		document.getElementById('input_siwp_captcha_id').value = cid;
-		document.getElementById('securimage_captcha_image').src = '{$plugin_url}lib/siwp_captcha.php?id=' + cid;
-
-		// update flash button with new id
-		var obj = document.getElementById('siwp_obj');
-		obj.setAttribute('data', obj.getAttribute('data').replace(/[a-zA-Z0-9]{40}$/, cid));
-		var par = document.getElementById('siwp_param'); // this was a comment...
-		par.value = par.value.replace(/[a-zA-Z0-9]{40}$/, cid);
-
-		// replace old flash w/ new one using new id
-		var newObj = obj.cloneNode(true);
-		obj.parentNode.insertBefore(newObj, obj);
-		obj.parentNode.removeChild(obj);
-	}
-	function siwp_genid() {
-	    // generate a random id
-		var cid = '', chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-		for (var c = 0; c < 40; ++c) { cid += chars.charAt(Math.floor(Math.random() * chars.length)); }
-		return cid;
-	};
-	var siwp_interval = setInterval(siwp_refresh, " . ($expireTime * 1000) . ");
-	-->
-	</script>
-	";
-
-	$sequence = explode('-', $display_sequence);
-	foreach($sequence as $part) {
-		switch($part) {
-			case 'break':
-				$captcha_html .= "<br />\n";
-				break;
-
-			case 'captcha':
-			{
-				$captcha_html .= '<div style="float: left">';
-				$captcha_html .= '<img id="securimage_captcha_image" src="' .
-								 siwp_get_captcha_image_url() .
-								 '?id=' . $captchaId . '" alt="CAPTCHA Image" style="vertical-align: middle;' .
-								 ($imgstyle != '' ?
-								 ' ' . htmlspecialchars($imgstyle) :
-								 '') . '" ' .
-								 ($imgclass != '' ?
-								 'class="' . htmlspecialchars($imgclass) . '" ' :
-								 '') .
-								 "/>";
-
-				if ($show_protected_by) {
-					$captcha_html .= '<br /><a href="http://www.phpcaptcha.org/" ' .
-									 'target="_new" style="font-size: 12px; ' .
-									 'font-style: italic" class="' .
-									 'swip_protected_by">Protected by ' .
-									 'Securimage-WP</a>' . "\n";
-				}
-
-				$captcha_html .= "</div>\n";
-
-				if (!$disable_audio) {
-					 $captcha_html .= '<div style="float: left">';
-					 $captcha_html .= '<object id="siwp_obj" type="application/x-shockwave-flash"' .
-									  ' data="' . siwp_get_plugin_url() .
-									  'lib/securimage_play.swf?bgcol=#' . $flash_bgcol .
-									  '&amp;icon_file=' . urlencode($flash_icon)  .
-									  '&amp;audio_file=' . urlencode(siwp_get_plugin_url()) .
-									  'lib/siwp_play.php?id=' . $captchaId . '" height="32" width="32">' .
-									  "\n" .
-									  '<param id="siwp_param" name="movie" value="' . siwp_get_plugin_url() .
-									  'lib/securimage_play.swf?bgcol=#' . $flash_bgcol  .
-									  '&amp;icon_file=' . urlencode($flash_icon) .
-									  '&amp;audio_file=' . urlencode(siwp_get_plugin_url()) .
-									  'lib/siwp_play.php?id=' . $captchaId . '">' .
-									  "\n</object>\n<br />";
-				}
-
-				if ($use_refresh_text) $captcha_html .= '[ ';
-				$captcha_html .= '<a tabindex="-1" style="border-style: none;"' .
-								 ' href="#" title="Refresh Image" ' .
-								 'onclick="siwp_refresh(); return false">' .
-								 ($use_refresh_text == false ?
-								 '<img src="' . siwp_get_plugin_url() .
-								 'lib/images/refresh.png" alt="Reload Image"' .
-								 ' onclick="this.blur()" style="height: 32px; width: 32px"' .
-								 ' align="bottom" />' :
-								 $refresh_text
-								 ) .
-								 '</a>';
-				if ($use_refresh_text) $captcha_html .= ' ]';
-
-				$captcha_html .= '</div><div style="clear: both;"></div>' . "\n";
-
-				break;
-			}
-
-			case 'input':
-				$captcha_html .= '<input type="hidden" id="input_siwp_captcha_id" name="siwp_captcha_id" value="' . $captchaId . '" />' .
-								 '<input id="siwp_captcha_value" ' .
-								 'name="siwp_captcha_value" size="10" ' .
-								 'maxlength="8" type="text" aria-required="true"' .
-								 ($inputclass != '' ?
-								 ' class="' . htmlspecialchars($inputclass) . '"' :
-								 '') .
-								 ($inputstyle != '' ?
-								 ' style="' . htmlspecialchars($inputstyle) . '" ' :
-								 '') .
-								 ' />';
-
-				if (get_current_theme() == 'Twenty Eleven') {
-					$captcha_html .= '</p>';
-				}
-
-				$captcha_html .= "\n";
-				break;
-
-			case 'label':
-				if (get_current_theme() == 'Twenty Eleven') {
-					$captcha_html .= '<p class="comment-form-email">';
-				}
-				$captcha_html .= '<label for="siwp_captcha_value"' .
-	  							 ($labelclass != '' ?
-								 ' class="' . $labelclass . '"' :
-								 '') .
-								 ($labelstyle != '' ?
-								 ' style="' . htmlspecialchars($labelstyle) . '"' :
-								 '') .
-								 '>' .
-								 'Enter Code <span class="required">*</span>' .
-								 '</label>' .
-				                 "\n";
-				break;
-		}
-	}
-
-	$captcha_html .= "</div>\n";
+    $position_fix = get_option('siwp_position_fix', 0);
+    $captcha_html = "<div id=\"siwp_captcha_input\">\n";
+    
+    if (!$forceDisplay && is_user_logged_in() && current_user_can('administrator')) {
+        $captcha_html .= '<div style="font-size: 1.2em; text-align: center">Securimage-WP CAPTCHA would appear here if you were not logged in as a WordPress administrator :)</div>';
+    } else {
+    	$show_protected_by = get_option('siwp_show_protected_by', 0);
+    	$disable_audio	   = get_option('siwp_disable_audio', 0);
+    	$flash_bgcol	   = get_option('siwp_flash_bgcol', '#ffffff');
+    	$flash_icon		   = get_option('siwp_flash_icon', siwp_default_flash_icon());
+    	$refresh_text	   = get_option('siwp_refresh_text', 'Different Image');
+    	$use_refresh_text  = get_option('siwp_use_refresh_text', 0);
+    	$imgclass		   = get_option('siwp_css_clsimg', '');
+    	$labelclass		   = get_option('siwp_css_clslabel', '');
+    	$inputclass		   = get_option('siwp_css_clsinput', '');
+    	$imgstyle		   = get_option('siwp_css_cssimg');
+    	$labelstyle		   = get_option('siwp_css_csslabel');
+    	$inputstyle		   = get_option('siwp_css_cssinput');
+    	$expireTime		   = siwp_get_captcha_expiration();
+    	$display_sequence  = get_option('siwp_display_sequence', 'captcha-input-label');
+    	$display_sequence  = preg_replace('/\s|\(.*?\)/', '', $display_sequence);
+    	$captchaId		   = sha1(uniqid($_SERVER['REMOTE_ADDR'] . $_SERVER['REMOTE_PORT']));
+    	$plugin_url		   = siwp_get_plugin_url();
+    
+    	$captcha_html .=
+    	"<script type=\"text/javascript\">
+    	<!--
+    	function siwp_refresh() {
+    	    // get new captcha id, refresh the image w/ new id, and update form input with new id
+    		var cid = siwp_genid();
+    		document.getElementById('input_siwp_captcha_id').value = cid;
+    		document.getElementById('securimage_captcha_image').src = '{$plugin_url}lib/siwp_captcha.php?id=' + cid;
+    
+    		// update flash button with new id
+    		var obj = document.getElementById('siwp_obj');
+    		obj.setAttribute('data', obj.getAttribute('data').replace(/[a-zA-Z0-9]{40}$/, cid));
+    		var par = document.getElementById('siwp_param'); // this was a comment...
+    		par.value = par.value.replace(/[a-zA-Z0-9]{40}$/, cid);
+    
+    		// replace old flash w/ new one using new id
+    		var newObj = obj.cloneNode(true);
+    		obj.parentNode.insertBefore(newObj, obj);
+    		obj.parentNode.removeChild(obj);
+    	}
+    	function siwp_genid() {
+    	    // generate a random id
+    		var cid = '', chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    		for (var c = 0; c < 40; ++c) { cid += chars.charAt(Math.floor(Math.random() * chars.length)); }
+    		return cid;
+    	};
+    	var siwp_interval = setInterval(siwp_refresh, " . ($expireTime * 1000) . ");
+    	-->
+    	</script>
+    	";
+    
+    	$sequence = explode('-', $display_sequence);
+    	foreach($sequence as $part) {
+    		switch($part) {
+    			case 'break':
+    				$captcha_html .= "<br />\n";
+    				break;
+    
+    			case 'captcha':
+    			{
+    				$captcha_html .= '<div style="float: left">';
+    				$captcha_html .= '<img id="securimage_captcha_image" src="' .
+    								 siwp_get_captcha_image_url() .
+    								 '?id=' . $captchaId . '" alt="CAPTCHA Image" style="vertical-align: middle;' .
+    								 ($imgstyle != '' ?
+    								 ' ' . htmlspecialchars($imgstyle) :
+    								 '') . '" ' .
+    								 ($imgclass != '' ?
+    								 'class="' . htmlspecialchars($imgclass) . '" ' :
+    								 '') .
+    								 "/>";
+    
+    				if ($show_protected_by) {
+    					$captcha_html .= '<br /><a href="http://www.phpcaptcha.org/" ' .
+    									 'target="_new" style="font-size: 12px; ' .
+    									 'font-style: italic" class="' .
+    									 'swip_protected_by">Protected by ' .
+    									 'Securimage-WP</a>' . "\n";
+    				}
+    
+    				$captcha_html .= "</div>\n";
+    
+    				if (!$disable_audio) {
+    					 $captcha_html .= '<div style="float: left">';
+    					 $captcha_html .= '<object id="siwp_obj" type="application/x-shockwave-flash"' .
+    									  ' data="' . siwp_get_plugin_url() .
+    									  'lib/securimage_play.swf?bgcol=%23' . $flash_bgcol .
+    									  '&amp;icon_file=' . urlencode($flash_icon)  .
+    									  '&amp;audio_file=' . urlencode(siwp_get_plugin_url()) .
+    									  'lib/siwp_play.php?id=' . $captchaId . '" height="32" width="32" style="margin-bottom: 5px">' .
+    									  "\n" .
+    									  '<param id="siwp_param" name="movie" value="' . siwp_get_plugin_url() .
+    									  'lib/securimage_play.swf?bgcol=%23' . $flash_bgcol  .
+    									  '&amp;icon_file=' . urlencode($flash_icon) .
+    									  '&amp;audio_file=' . urlencode(siwp_get_plugin_url()) .
+    									  'lib/siwp_play.php?id=' . $captchaId . '">' .
+    									  "\n</object>\n<br />";
+    				}
+    
+    				if ($use_refresh_text) $captcha_html .= '[ ';
+    				$captcha_html .= '<a tabindex="-1" style="border-style: none;"' .
+    								 ' href="#" title="Refresh Image" ' .
+    								 'onclick="siwp_refresh(); return false">' .
+    								 ($use_refresh_text == false ?
+    								 '<img src="' . siwp_get_plugin_url() .
+    								 'lib/images/refresh.png" alt="Reload Image"' .
+    								 ' onclick="this.blur()" style="vertical-align: middle; height: 32px; width: 32px"' .
+    								 ' align="bottom" />' :
+    								 $refresh_text
+    								 ) .
+    								 '</a>';
+    				if ($use_refresh_text) $captcha_html .= ' ]';
+    
+    				$captcha_html .= '</div><div style="clear: both;"></div>' . "\n";
+    
+    				break;
+    			}
+    
+    			case 'input':
+    				$captcha_html .= '<input type="hidden" id="input_siwp_captcha_id" name="siwp_captcha_id" value="' . $captchaId . '" />' .
+    								 '<input id="siwp_captcha_value" ' .
+    								 'name="siwp_captcha_value" size="10" ' .
+    								 'maxlength="8" type="text" aria-required="true"' .
+    								 ($inputclass != '' ?
+    								 ' class="' . htmlspecialchars($inputclass) . '"' :
+    								 '') .
+    								 ($inputstyle != '' ?
+    								 ' style="' . htmlspecialchars($inputstyle) . '" ' :
+    								 '') .
+    								 ' />';
+    
+    				if (get_current_theme() == 'Twenty Eleven') {
+    					$captcha_html .= '</p>';
+    				}
+    
+    				$captcha_html .= "\n";
+    				break;
+    
+    			case 'label':
+    				if (get_current_theme() == 'Twenty Eleven') {
+    					$captcha_html .= '<p class="comment-form-email">';
+    				}
+    				$captcha_html .= '<label for="siwp_captcha_value"' .
+    	  							 ($labelclass != '' ?
+    								 ' class="' . $labelclass . '"' :
+    								 '') .
+    								 ($labelstyle != '' ?
+    								 ' style="' . htmlspecialchars($labelstyle) . '"' :
+    								 '') .
+    								 '>' .
+    								 'Enter Code <span class="required">*</span>' .
+    								 '</label>' .
+    				                 "\n";
+    				break;
+    		}
+    	}
+    } // else current_user_can()
+    
+    $captcha_html .= "</div>\n"; // div#siwp_captcha_input
 
 	if ($position_fix) {
 		$captcha_html .=
@@ -396,7 +406,7 @@ function siwp_get_table_name()
 function siwp_get_sequence_list()
 {
 	return array(
-		'break-captcha-label-input (Twenty Twelve / Twenty Eleven Style)',
+		'break-captcha-label-input (Twenty Fifteen / WordPress Default Styles)',
 		'break-captcha-label-break-input (Twenty Ten Style)',
 		'break-captcha-input-label',
 		'break-captcha-break-input-label',
@@ -409,10 +419,7 @@ function siwp_get_sequence_list()
 
 require_once ABSPATH . '/wp-includes/pluggable.php';
 
-if (!is_user_logged_in() || !current_user_can('administrator')) {
-	add_action('comment_form', 'siwp_captcha_html');
-}
-
+add_action('comment_form', 'siwp_captcha_html', 10, 1);
 add_action('preprocess_comment', 'siwp_check_captcha', 0);
 
 
@@ -794,7 +801,7 @@ function siwp_plugin_options()
 	</form>
 
 	<p>Image Preview:</p>
-	<?php echo siwp_captcha_html() ?>
+	<?php echo siwp_captcha_html(0, true) ?>
 
 	</div>
 

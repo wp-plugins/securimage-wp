@@ -4,8 +4,8 @@ Author URI: http://phpcaptcha.org
 Donate link: http://www.phpcaptcha.org/donate/
 Tags: CAPTCHA, comments, spam protection, comment form
 Requires at least: 3.0
-Tested up to: 3.5.2
-Stable tag: 3.5.1
+Tested up to: 4.1.1
+Stable tag: 3.5.4
 
 Securimage-WP adds powerful CAPTCHA protection to comment forms on posts and pages to help prevent comment spam from getting onto your site.  CAPTCHA images are highly customizable, and support audio output.
 
@@ -73,6 +73,10 @@ CAPTCHA codes have expiration times in order to reduce the amount of time spamme
 5. Miscellanous options for captcha functionality and look
 
 == Changelog ==
+
+= 3.5.4-WP =
+* Confirm compatibilty with WordPress 4.1.1
+* Upgrade Securimage code to 3.5.4
 
 = 3.5.1-WP =
 * Fix potential XSS vulnerability in siwp_test.php
