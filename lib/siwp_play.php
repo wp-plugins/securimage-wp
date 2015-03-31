@@ -1,15 +1,6 @@
 <?php
 
-/*
- Plugin Name: Securimage-WP
-Plugin URI: http://phpcaptcha.org/download/wordpress-plugin
-Description: Adds CAPTCHA protection to comment forms on posts and pages
-Author: Drew Phillips
-Version: 3.5.4-WP
-Author URI: http://www.phpcaptcha.org/
-License: GPL2
-*/
-/*  Copyright (C) 2012 Drew Phillips  (http://phpcaptcha.org/download/securimage-wp)
+/*  Copyright (C) 2012 Drew Phillips  (http://phpcaptcha.org/download/securimage-wp.zip)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

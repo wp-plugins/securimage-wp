@@ -1,15 +1,6 @@
 <?php
 
-/*
-Plugin Name: Securimage-WP
-Plugin URI: http://phpcaptcha.org/download/wordpress-plugin
-Description: Adds CAPTCHA protection to comment forms on posts and pages
-Author: Drew Phillips
-Version: 3.5.4-WP
-Author URI: http://www.phpcaptcha.org/
-License: GPL2
-*/
-/*  Copyright (C) 2015 Drew Phillips  (http://phpcaptcha.org/download/securimage-wp)
+/*  Copyright (C) 2015 Drew Phillips  (http://phpcaptcha.org/download/securimage-wp.zip)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -40,7 +31,7 @@ if (get_option('siwp_debug_image', 0) == 1) {
 require_once dirname(__FILE__) . '/securimage.php';
 
 $captchaId = (isset($_GET['id']) && strlen($_GET['id']) == 40) ?
-              $_GET['id'] : 
+              $_GET['id'] :
               sha1(uniqid($_SERVER['REMOTE_ADDR'] . $_SERVER['REMOTE_PORT']));
 
 $captcha_type = (get_option('siwp_use_math', 0) == 1) ? 1 : 0;
@@ -81,7 +72,7 @@ $result = siwp_get_code_from_database($captchaId);
 
 if ($result == null) {
     $code = siwp_generate_code($captchaId, $img);
-    
+
     $code_display = $code['display'];
 } else {
     $code_display = $result->code_display;
