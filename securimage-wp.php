@@ -166,13 +166,13 @@ function siwp_captcha_html($post_id = 0, $forceDisplay = false)
                                           'lib/securimage_play.swf?bgcol=%23' . $flash_bgcol .
                                           '&amp;icon_file=' . urlencode($flash_icon)  .
                                           '&amp;audio_file=' . urlencode(siwp_get_plugin_url()) .
-                                          'lib/siwp_play.php?id=' . $captchaId . '" height="32" width="32" style="margin-bottom: 5px">' .
+                                          'lib/siwp_play.php%3Fid=' . $captchaId . '" height="32" width="32" style="margin-bottom: 5px">' .
                                           "\n" .
                                           '<param id="siwp_param" name="movie" value="' . siwp_get_plugin_url() .
                                           'lib/securimage_play.swf?bgcol=%23' . $flash_bgcol  .
                                           '&amp;icon_file=' . urlencode($flash_icon) .
                                           '&amp;audio_file=' . urlencode(siwp_get_plugin_url()) .
-                                          'lib/siwp_play.php?id=' . $captchaId . '">' .
+                                          'lib/siwp_play.php%3Fid=' . $captchaId . '">' .
                                           "\n</object>\n<br />";
                     }
 
