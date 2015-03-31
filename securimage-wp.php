@@ -149,7 +149,7 @@ function siwp_captcha_html($post_id = 0, $forceDisplay = false)
                                      '') .
                                      "/>";
 
-                    if ($show_protected_by) {
+                    if ($show_protected_by === 1) {
                         $captcha_html .= '<br /><a href="http://www.phpcaptcha.org/" ' .
                                          'target="_new" style="font-size: 12px; ' .
                                          'font-style: italic" class="' .
