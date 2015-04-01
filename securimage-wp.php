@@ -275,6 +275,11 @@ function siwp_check_captcha($commentdata)
         return $commentdata;
     }
 
+    // compatibility with tiled gallery carousel without jetpack
+    if ( isset($_POST['action']) && $_POST['action'] == 'post_attachment_comment' && basename($_SERVER['REQUEST_URI']) == 'admin-ajax.php' && is_plugin_active('tiled-gallery-carousel-without-jetpack/tiled-gallery.php') ) {
+        return $commentdata;
+    }
+
     $valid       = false; // valid captcha entry?
     $code       = '';    // code entered
     $captchaId = '';    // captcha ID to check
