@@ -4,7 +4,7 @@ Author URI: http://phpcaptcha.org
 Donate link: http://www.phpcaptcha.org/donate/
 Tags: CAPTCHA, comments, spam protection, comment form
 Requires at least: 3.0
-Tested up to: 4.1.1
+Tested up to: 4.2
 Stable tag: 3.5.4
 
 Securimage-WP adds powerful CAPTCHA protection to comment forms on posts and pages to help prevent comment spam from getting onto your site.  CAPTCHA images are highly customizable, and support audio output.
