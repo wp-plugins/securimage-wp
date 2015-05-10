@@ -2,9 +2,9 @@
 /*
 Plugin Name: Securimage-WP
 Plugin URI: http://phpcaptcha.org/download/wordpress-plugin
-Description: Adds CAPTCHA protection to comment forms on posts and pages
+Description: CAPTCHA plugin for site registration and post/page comment forms
 Author: Drew Phillips
-Version: 3.5.4
+Version: 3.6
 Author URI: http://www.phpcaptcha.org/
 */
 
@@ -149,7 +149,7 @@ function siwp_captcha_html($post_id = 0, $forceDisplay = false)
                                      '') .
                                      "/>";
 
-                    if ($show_protected_by === 1) {
+                    if ($show_protected_by === '1') {
                         $captcha_html .= '<br /><a href="http://www.phpcaptcha.org/" ' .
                                          'target="_new" style="font-size: 12px; ' .
                                          'font-style: italic" class="' .
@@ -257,7 +257,7 @@ function siwp_captcha_html($post_id = 0, $forceDisplay = false)
     echo $captcha_html;
 } // function siwp_captcha_html
 
-function siwp_check_captcha($commentdata)
+function siwp_process_comment($commentdata)
 {
     // admin comment reply using ajax from admin panel
     if ( isset($_POST['_ajax_nonce-replyto-comment']) && check_ajax_referer('replyto-comment', '_ajax_nonce-replyto-comment')) {
@@ -265,8 +265,7 @@ function siwp_check_captcha($commentdata)
     }
 
     // pingback or trackback comment
-    if ( (!empty($commentdata['comment_type'])) &&
-            in_array($commentdata['comment_type'], array('pingback', 'trackback'))) {
+    if ( (!empty($commentdata['comment_type'])) && in_array($commentdata['comment_type'], array('pingback', 'trackback'))) {
         return $commentdata;
     }
 
@@ -280,6 +279,37 @@ function siwp_check_captcha($commentdata)
         return $commentdata;
     }
 
+    $error = '';
+
+    if (false === siwp_check_captcha($error)) {
+        wp_die(__($error));
+    }
+
+    return $commentdata;
+}
+
+function siwp_process_registration($username, $email, $wperror)
+{
+    // admin user create account
+    if (is_user_logged_in() && current_user_can('administrator')) {
+        return true;
+    }
+
+    $error = '';
+    if (false === siwp_check_captcha($error)) {
+        if ( ($pos = strpos($error, 'Please')) !== false) {
+            // strip javascript back message from error
+            $error = substr($error, 0, $pos);
+        }
+        $wperror->add('registerfail', __($error));
+        return false;
+    }
+
+    return true;
+}
+
+function siwp_check_captcha(&$error)
+{
     $valid       = false; // valid captcha entry?
     $code       = '';    // code entered
     $captchaId = '';    // captcha ID to check
@@ -296,11 +326,13 @@ function siwp_check_captcha($commentdata)
             }
         } else {
             // invalid token
-            wp_die( __('Error: The security token is invalid.') );
+            $error = 'Error: The security token is invalid.';
+            return false;
         }
     } else {
         // missing token
-        wp_die( __('Error: Missing security token from submission.') );
+        $error = 'Error: Missing security token from submission.';
+        return false;
     }
 
     if (strlen($code) > 0) {
@@ -312,10 +344,11 @@ function siwp_check_captcha($commentdata)
 
     if (!$valid) {
         // captcha was typed wrong or was left empty
-        wp_die( __('Error: The security code entered was incorrect.  Please go <a href="javascript:history.go(-1)">back</a> and try again.') );
+        $error = 'Error: The security code entered was incorrect.  Please go <a href="javascript:history.go(-1)">back</a> and try again.';
+        return false;
     }
 
-    return $commentdata;
+    return true;
 }
 
 function siwp_validate_captcha_by_id($captchaId, $captchaValue)
@@ -424,17 +457,26 @@ function siwp_get_sequence_list()
     );
 }
 
+// register hooks
 require_once ABSPATH . '/wp-includes/pluggable.php';
-
-add_action('comment_form', 'siwp_captcha_html', 10, 1);
-add_action('preprocess_comment', 'siwp_check_captcha', 0);
-
-
-// Admin menu and admin functions below...
 
 add_action('admin_menu', 'siwp_plugin_menu');
 register_activation_hook(__FILE__, 'siwp_install');
 
+// check to enable captcha on comment form
+if (true == get_option('siwp_enabled_comments', 1)) {
+    add_action('comment_form', 'siwp_captcha_html', 10, 1);
+    add_action('preprocess_comment', 'siwp_process_comment', 0);
+}
+
+// check to enable captcha on signup form
+if (true == get_option('siwp_enabled_signup', 1)) {
+    add_action('register_form', 'siwp_captcha_html', 99, 1);
+    add_action('register_post', 'siwp_process_registration', 0, 3);
+}
+// end register hooks
+
+// Admin menu and admin functions below...
 
 function siwp_plugin_menu()
 {
@@ -526,6 +568,8 @@ function siwp_register_settings()
     register_setting('securimage-wp-options', 'siwp_css_csslabel');
     register_setting('securimage-wp-options', 'siwp_dismiss_donate');
     register_setting('securimage-wp-options', 'siwp_has_donated');
+    register_setting('securimage-wp-options', 'siwp_enabled_comments');
+    register_setting('securimage-wp-options', 'siwp_enabled_signup');
 }
 
 function siwp_show_donate()
@@ -626,6 +670,21 @@ function siwp_plugin_options()
 
     <table class="form-table">
         <tr valign="top"><td width="300"></td><td></td></tr>
+
+        <tr valign="top">
+            <th colspan="2" scope="row" style="font-size: 1.4em">Protection Options</th>
+        </tr>
+
+        <tr valign="top">
+            <th scope="row"><label for="siwp_enabled_comments">Enable on comment form:<br /><span style="font-size: 0.8em">Enable captcha protection on comment form</span></label></th>
+            <td><input type="checkbox" name="siwp_enabled_comments" value="1" <?php checked(1, get_option('siwp_enabled_comments', 1)) ?>/></td>
+        </tr>
+
+        <tr valign="top">
+            <th scope="row"><label for="siwp_enabled_signup">Enable on registration form:<br /><span style="font-size: 0.8em">Enable captcha protecion on registration form</span></label></th>
+            <td><input type="checkbox" id="siwp_enabled_signup" name="siwp_enabled_signup" value="1" <?php checked(1, get_option('siwp_enabled_signup', 1)) ?>/></td>
+        </tr>
+
         <tr valign="top">
             <th colspan="2" scope="row" style="font-size: 1.4em">CAPTCHA Image Options</th>
         </tr>
@@ -635,7 +694,7 @@ function siwp_plugin_options()
             <td>
                 <select name="siwp_code_length">
                     <?php for ($i = 3; $i <= 8; ++$i): ?>
-                    <option<?php if ($i == get_option('siwp_code_length', 6)): ?> selected="selected"<?php endif; ?>><?php echo $i ?></option>
+                    <option<?php if ($i == get_option('siwp_code_length', 5)): ?> selected="selected"<?php endif; ?>><?php echo $i ?></option>
                     <?php endfor; ?>
                 </select>
             </td>
@@ -653,22 +712,22 @@ function siwp_plugin_options()
 
         <tr valign="top">
             <th scope="row">Image Background Color</th>
-            <td><input class="color" type="text" name="siwp_image_bg_color" value="<?php echo get_option('siwp_image_bg_color', 'FFFFFF'); ?>" /></td>
+            <td><input class="color" type="text" name="siwp_image_bg_color" value="<?php echo get_option('siwp_image_bg_color', 'F2F2F2'); ?>" /></td>
         </tr>
 
         <tr valign="top">
             <th scope="row">Text Color</th>
-            <td><input class="color" type="text" name="siwp_text_color" value="<?php echo get_option('siwp_text_color', '000000'); ?>" /></td>
+            <td><input class="color" type="text" name="siwp_text_color" value="<?php echo get_option('siwp_text_color', '7D7D7D'); ?>" /></td>
         </tr>
 
         <tr valign="top">
             <th scope="row">Number of Distortion Lines</th>
-            <td><input type="text" name="siwp_num_lines" value="<?php echo get_option('siwp_num_lines', '6'); ?>" size="5" maxlength="2" /></td>
+            <td><input type="text" name="siwp_num_lines" value="<?php echo get_option('siwp_num_lines', '5'); ?>" size="5" maxlength="2" /></td>
         </tr>
 
         <tr valign="top">
             <th scope="row">Distortion Line Color</th>
-            <td><input class="color" type="text" name="siwp_line_color" value="<?php echo get_option('siwp_line_color', '000000'); ?>" /></td>
+            <td><input class="color" type="text" name="siwp_line_color" value="<?php echo get_option('siwp_line_color', '7D7D7D'); ?>" /></td>
         </tr>
 
         <tr valign="top">
@@ -678,7 +737,7 @@ function siwp_plugin_options()
 
         <tr valign="top">
             <th scope="row">Noise Color</th>
-            <td><input class="color" type="text" name="siwp_noise_color" value="<?php echo get_option('siwp_noise_color', '000000'); ?>" /></td>
+            <td><input class="color" type="text" name="siwp_noise_color" value="<?php echo get_option('siwp_noise_color', '7D7D7D'); ?>" /></td>
         </tr>
 
         <tr valign="top">
@@ -692,13 +751,13 @@ function siwp_plugin_options()
         </tr>
 
         <tr valign="top">
-            <th scope="row">Randomize Image Backgrounds</th>
-            <td><input type="checkbox" name="siwp_randomize_background" value="1" <?php checked(1, get_option('siwp_randomize_background', 0)) ?> /></td>
+            <th scope="row"><label for="siwp_randomize_background">Randomize Image Backgrounds</label></th>
+            <td><input type="checkbox" id="siwp_randomize_background" name="siwp_randomize_background" value="1" <?php checked(1, get_option('siwp_randomize_background', 0)) ?> /></td>
         </tr>
 
         <tr valign="top">
-            <th scope="row">Use Mathematic Captcha</th>
-            <td><input type="checkbox" name="siwp_use_math" value="1" <?php checked(1, get_option('siwp_use_math', 0)) ?> /></td>
+            <th scope="row"><label for="siwp_use_math">Use Mathematic Captcha</label></th>
+            <td><input type="checkbox" id="siwp_use_math" name="siwp_use_math" value="1" <?php checked(1, get_option('siwp_use_math', 0)) ?> /></td>
         </tr>
 
         <tr valign="top">
@@ -706,8 +765,8 @@ function siwp_plugin_options()
         </tr>
 
         <tr valign="top">
-            <th scope="row">Disable Audio CAPTCHA</th>
-            <td><input type="checkbox" name="siwp_disable_audio" value="1" <?php checked(1, get_option('siwp_disable_audio', 0)) ?> /></td>
+            <th scope="row"><label for="siwp_disable_audio">Disable Audio CAPTCHA</label></th>
+            <td><input type="checkbox" id="siwp_disable_audio" name="siwp_disable_audio" value="1" <?php checked(1, get_option('siwp_disable_audio', 0)) ?> /></td>
         </tr>
 
         <tr valign="top">
@@ -735,22 +794,22 @@ function siwp_plugin_options()
         </tr>
 
         <tr valign="top">
-            <th scope="row">Use Text for Image Refresh<br /></th>
+            <th scope="row"><label for="siwp_use_refresh_text">Use Text for Image Refresh</label><br /></th>
             <td>
-                <input type="checkbox" name="siwp_use_refresh_text" value="1" <?php checked(1, get_option('siwp_use_refresh_text', 0)) ?> />
+                <input type="checkbox" id="siwp_use_refresh_text" name="siwp_use_refresh_text" value="1" <?php checked(1, get_option('siwp_use_refresh_text', 0)) ?> />
                 &nbsp; Display Text:
                 <input type="text" name="siwp_refresh_text" value="<?php echo get_option('siwp_refresh_text', 'Different Image') ?>" />
             </td>
         </tr>
 
         <tr valign="top">
-            <th scope="row">Fix CAPTCHA Position<br /><span style="font-size: 0.8em">If CAPTCHA shows up below comment submit button, enable this option</span></th>
-            <td><input type="checkbox" name="siwp_position_fix" value="1" <?php checked(1, get_option('siwp_position_fix', 0)) ?> /></td>
+            <th scope="row"><label for="siwp_position_fix">Fix CAPTCHA Position<br /><span style="font-size: 0.8em">If CAPTCHA shows up below comment submit button, enable this option</span></label></th>
+            <td><input type="checkbox" id="siwp_position_fix" name="siwp_position_fix" value="1" <?php checked(1, get_option('siwp_position_fix', 0)) ?> /></td>
         </tr>
 
         <tr valign="top">
-            <th scope="row">Show "Protected By" Link</th>
-            <td><input type="checkbox" name="siwp_show_protected_by" value="1" <?php checked(1, get_option('siwp_show_protected_by', 0)) ?> /></td>
+            <th scope="row"><label for="siwp_show_protected_by">Show "Protected By" Link</label></th>
+            <td><input type="checkbox" id="siwp_show_protected_by" name="siwp_show_protected_by" value="1" <?php checked(1, get_option('siwp_show_protected_by', 0)) ?> /></td>
         </tr>
 
         <tr valign="top">

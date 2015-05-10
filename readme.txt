@@ -2,16 +2,16 @@
 Contributors: drew010
 Author URI: http://phpcaptcha.org
 Donate link: http://www.phpcaptcha.org/donate/
-Tags: CAPTCHA, comments, spam protection, comment form
+Tags: CAPTCHA, comments, spam protection, comment form, registration, register
 Requires at least: 3.0
-Tested up to: 4.2
-Stable tag: 3.5.4
+Tested up to: 4.2.2
+Stable tag: 3.6
 
-Securimage-WP adds powerful CAPTCHA protection to comment forms on posts and pages to help prevent comment spam from getting onto your site.  CAPTCHA images are highly customizable, and support audio output.
+Securimage-WP gives you the ability to add powerful CAPTCHA protection to your WordPress signup form and comment forms on posts and pages to block bogus registrations and to block comment spam from your pages.  CAPTCHA images are fully customizable with support audio playback.
 
 == Description ==
 
-Securimage-WP utilizes the powerful CAPTCHA protection of [Securimage Captcha](http://phpcaptcha.org/ "Securimage PHP CAPTCHA") to add protection to your WordPress comment forms.
+Securimage-WP utilizes the powerful CAPTCHA protection of [Securimage Captcha](http://phpcaptcha.org/ "Securimage PHP CAPTCHA") to add protection to your WordPress registration and comment forms.
 
 From your WordPress Settings menu, you can easily customize all aspects of the CAPTCHA image to match your site's look, as well as customize the security features of the CAPTCHA.
 
@@ -26,7 +26,7 @@ Addtional Features Include:
 *	Easily add CSS classes and styles to the CAPTCHA inputs
 *	Select the sequence of the CAPTCHA inputs to match your site layout
 *	Allows pingbacks and trackbacks, and replies from administration panel
-*	Visitors do not need cookies enabled, stores codes in a database table
+*	No cookies needed, codes are stored in a database table
 
 Requirements:
 
@@ -71,8 +71,13 @@ CAPTCHA codes have expiration times in order to reduce the amount of time spamme
 3. A CAPTCHA customized to use a CSS border and margin
 4. Admin options to control image appearance
 5. Miscellanous options for captcha functionality and look
+6. CAPTCHA on the registration form
 
 == Changelog ==
+
+= 3.6-WP =
+* Add option to protect site registration form
+* WordPress 4.2 compatibility
 
 = 3.5.4-WP =
 * Confirm compatibilty with WordPress 4.1.1
