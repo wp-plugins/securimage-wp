@@ -5,7 +5,7 @@ Donate link: http://www.phpcaptcha.org/donate/
 Tags: CAPTCHA, comments, spam protection, comment form, registration, register
 Requires at least: 3.0
 Tested up to: 4.2.2
-Stable tag: 3.6
+Stable tag: 3.6.1
 
 Securimage-WP gives you the ability to add powerful CAPTCHA protection to your WordPress signup form and comment forms on posts and pages to block bogus registrations and to block comment spam from your pages.  CAPTCHA images are fully customizable with support audio playback.
 
@@ -56,6 +56,26 @@ If you install Securimage-WP, there is a test script that will tell you whether 
 
 From the Securimage-WP settings menu, enable the `Debug Image Errors` option, save the settings, and then click the link labeled `View Image Directly`.  Ideally, this will reveal any error messages that may be causing the image generation to fail.  Try to troubleshoot the error, or contact us for assistance.
 
+= Can I display a CAPTCHA somewhere other than the comment or registration forms? =
+
+Yes, since version 3.6.1 you can display a captcha using the shortcode `[siwp_show_captcha]` anywhere on your WordPress site.
+
+To validate the user's input, call the function siwp_check_captcha.  Note: To validate from a WordPress page, you will need a plugin like Exec-PHP installed, or your PHP form processor needs to hook into WordPress (typically by including wp-load.php from your PHP script).
+
+See [here](https://gist.github.com/dapphp/ab9016409535a6638816) for an example WordPress page with a simple form and captcha with validation.
+
+= I enabled the captcha on my comment form or registration page but no captcha image appears =
+
+Securimage-WP relies on some standard function hooks for displaying the CAPTCHA.  If the image doesn't appear on your site's forms, it may be due to those templates not implementing the proper hooks.
+
+To fix this, you can either edit your templates to include the proper hooks, or if the site uses a custom registration page, use the `[siwp_show_captcha]` shortcode on your registration form.
+
+For the comment form, the proper hook needed is `<?php do_action( 'comment_form', $post_id ); ?>`
+
+For the registration form, the proper hook needed is `<?php do_action( 'register_form' ); ?>`
+
+The calls to these actions should go in the template where you want the CAPTCHA image to appear. 
+
 = The refresh button does not work =
 
 Javascript must be enabled for the refresh buttons to work.  Make sure Javascript is enabled or check for errors that may prevent it from functioning.
@@ -74,6 +94,9 @@ CAPTCHA codes have expiration times in order to reduce the amount of time spamme
 6. CAPTCHA on the registration form
 
 == Changelog ==
+
+= 3.6.1-WP =
+* Add `[siwp_show_captcha]` shortcode for displaying a captcha in any WordPress post or page
 
 = 3.6-WP =
 * Add option to protect site registration form
