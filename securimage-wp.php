@@ -4,7 +4,7 @@ Plugin Name: Securimage-WP
 Plugin URI: http://phpcaptcha.org/download/wordpress-plugin
 Description: CAPTCHA plugin for site registration and post/page comment forms
 Author: Drew Phillips
-Version: 3.6
+Version: 3.6.1
 Author URI: http://www.phpcaptcha.org/
 */
 
@@ -69,31 +69,36 @@ function siwp_install()
     }
 }
 
-function siwp_captcha_html($post_id = 0, $forceDisplay = false)
+function siwp_captcha_html($post_id = 0, $forceDisplay = false, $shortcode = false)
 {
-    $position_fix = get_option('siwp_position_fix', 0);
+    if ($shortcode) {
+        $position_fix = false;
+    } else {
+        $position_fix = get_option('siwp_position_fix', 0);
+    }
+
     $captcha_html = "<div id=\"siwp_captcha_input\">\n";
 
     if (!$forceDisplay && is_user_logged_in() && current_user_can('administrator')) {
         $captcha_html .= '<div style="font-size: 1.2em; text-align: center">Securimage-WP CAPTCHA would appear here if you were not logged in as a WordPress administrator :)</div>';
     } else {
         $show_protected_by = get_option('siwp_show_protected_by', 0);
-        $disable_audio       = get_option('siwp_disable_audio', 0);
+        $disable_audio     = get_option('siwp_disable_audio', 0);
         $flash_bgcol       = get_option('siwp_flash_bgcol', '#ffffff');
-        $flash_icon           = get_option('siwp_flash_icon', siwp_default_flash_icon());
-        $refresh_text       = get_option('siwp_refresh_text', 'Different Image');
+        $flash_icon        = get_option('siwp_flash_icon', siwp_default_flash_icon());
+        $refresh_text      = get_option('siwp_refresh_text', 'Different Image');
         $use_refresh_text  = get_option('siwp_use_refresh_text', 0);
-        $imgclass           = get_option('siwp_css_clsimg', '');
-        $labelclass           = get_option('siwp_css_clslabel', '');
-        $inputclass           = get_option('siwp_css_clsinput', '');
-        $imgstyle           = get_option('siwp_css_cssimg');
-        $labelstyle           = get_option('siwp_css_csslabel');
-        $inputstyle           = get_option('siwp_css_cssinput');
-        $expireTime           = siwp_get_captcha_expiration();
+        $imgclass          = get_option('siwp_css_clsimg', '');
+        $labelclass        = get_option('siwp_css_clslabel', '');
+        $inputclass        = get_option('siwp_css_clsinput', '');
+        $imgstyle          = get_option('siwp_css_cssimg');
+        $labelstyle        = get_option('siwp_css_csslabel');
+        $inputstyle        = get_option('siwp_css_cssinput');
+        $expireTime        = siwp_get_captcha_expiration();
         $display_sequence  = get_option('siwp_display_sequence', 'captcha-input-label');
         $display_sequence  = preg_replace('/\s|\(.*?\)/', '', $display_sequence);
-        $captchaId           = sha1(uniqid($_SERVER['REMOTE_ADDR'] . $_SERVER['REMOTE_PORT']));
-        $plugin_url           = siwp_get_plugin_url();
+        $captchaId         = sha1(uniqid($_SERVER['REMOTE_ADDR'] . $_SERVER['REMOTE_PORT']));
+        $plugin_url        = siwp_get_plugin_url();
 
         $captcha_html .=
         "<script type=\"text/javascript\">
@@ -243,7 +248,7 @@ function siwp_captcha_html($post_id = 0, $forceDisplay = false)
         <script type=\"text/javascript\">
         <!--
         var commentSubButton = document.getElementById('comment');
-          var csbParent = commentSubButton.parentNode;
+        var csbParent = commentSubButton.parentNode;
         var captchaDiv = document.getElementById('siwp_captcha_input');
         csbParent.appendChild(captchaDiv, commentSubButton);
         -->
@@ -349,6 +354,17 @@ function siwp_check_captcha(&$error)
     }
 
     return true;
+}
+
+function siwp_captcha_shortcode($attrs)
+{
+    ob_start();
+    siwp_captcha_html(0, true, true);
+    $html = ob_get_clean();
+
+    $html = str_replace('siwp_captcha_input', 'siwp_captcha_container', $html);
+
+    return $html;
 }
 
 function siwp_validate_captcha_by_id($captchaId, $captchaValue)
@@ -474,6 +490,8 @@ if (true == get_option('siwp_enabled_signup', 1)) {
     add_action('register_form', 'siwp_captcha_html', 99, 1);
     add_action('register_post', 'siwp_process_registration', 0, 3);
 }
+
+add_shortcode('siwp_show_captcha', 'siwp_captcha_shortcode');
 // end register hooks
 
 // Admin menu and admin functions below...
