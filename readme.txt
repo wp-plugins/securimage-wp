@@ -4,29 +4,31 @@ Author URI: http://phpcaptcha.org
 Donate link: http://www.phpcaptcha.org/donate/
 Tags: CAPTCHA, comments, spam protection, comment form, registration, register
 Requires at least: 3.0
-Tested up to: 4.2.2
-Stable tag: 3.6.1
+Tested up to: 4.3
+Stable tag: 3.6.2
 
-Securimage-WP gives you the ability to add powerful CAPTCHA protection to your WordPress signup form and comment forms on posts and pages to block bogus registrations and to block comment spam from your pages.  CAPTCHA images are fully customizable with support audio playback.
+Block comment spam and fake registrations by adding the powerful CAPTCHA protection of Securimage-WP to your WordPress site.
 
 == Description ==
 
-Securimage-WP utilizes the powerful CAPTCHA protection of [Securimage Captcha](http://phpcaptcha.org/ "Securimage PHP CAPTCHA") to add protection to your WordPress registration and comment forms.
+Built from the open-source [Securimage PHP Captcha](http://phpcaptcha.org/ "Securimage PHP CAPTCHA"), this plugin allows you to add CAPTCHA protection to your WordPress site.  This plugin gives you the option to add CAPTCHA images to your comment, registration, login, and/or signup forms on your site.  You can also add CAPTCHA protection to any post or page using a shortcode provided by the plugin.
 
-From your WordPress Settings menu, you can easily customize all aspects of the CAPTCHA image to match your site's look, as well as customize the security features of the CAPTCHA.
+The image appearance can be easily customized to match your site's look and feel from the WordPress Settings menu.
 
 Securimage-WP also has the ability to stream secure, high-quality, dynamic audio CAPTCHAs to visitors.
 
-Addtional Features Include:
+Features Include:
 
+*   Protect comment, registration, login, or lost password forms
+*   Shortcode support
 *	Customize code-length, image dimensions, colors and distortion factors from a menu
-*	Supports word or math based CAPTCHA images and audio
+*	Word or math based CAPTCHA images and audio
 *	Add a custom signature to your images
 *	Customize icon used in Flash button for streaming audio
 *	Easily add CSS classes and styles to the CAPTCHA inputs
 *	Select the sequence of the CAPTCHA inputs to match your site layout
 *	Allows pingbacks and trackbacks, and replies from administration panel
-*	No cookies needed, codes are stored in a database table
+*	Doesn't require cookies or PHP session support; codes are stored in the WordPress database
 
 Requirements:
 
@@ -35,7 +37,7 @@ Requirements:
 
 About This Plugin:
 
-This plugin was developed by Drew Phillips, the developer of [Securimage PHP CAPTCHA](http://phpcaptcha.org/).  Securimage is completely free and open-source for the community and your use, as is this WordPress plugin.  If you find either of these things useful, please consider [donating](http://phpcaptcha.org/donate).  Thank you for using this plugin!
+This plugin was developed by Drew Phillips, the developer of [Securimage PHP CAPTCHA](http://phpcaptcha.org/).  Securimage is completely free and open-source for the community and your use, as is this WordPress plugin.  If you find either of these things useful, please consider [donating](https://www.phpcaptcha.org/donate).  Thank you for using this plugin!
 
 == Installation ==
 
@@ -52,7 +54,7 @@ Installation of Securimage-WP is simple.
 Securimage-WP requires `PHP 5.2+`, `GD2`, `FreeType`, and `WordPress 3+`.
 If you install Securimage-WP, there is a test script that will tell you whether or not your system meets the requirements.
 
-= The CAPTCHA image is not displaying =
+= The CAPTCHA image appears broken =
 
 From the Securimage-WP settings menu, enable the `Debug Image Errors` option, save the settings, and then click the link labeled `View Image Directly`.  Ideally, this will reveal any error messages that may be causing the image generation to fail.  Try to troubleshoot the error, or contact us for assistance.
 
@@ -64,7 +66,7 @@ To validate the user's input, call the function siwp_check_captcha.  Note: To va
 
 See [here](https://gist.github.com/dapphp/ab9016409535a6638816) for an example WordPress page with a simple form and captcha with validation.
 
-= I enabled the captcha on my comment form or registration page but no captcha image appears =
+= I enabled the captcha on my comment form, registration page, login form, or lost password form but no captcha image appears =
 
 Securimage-WP relies on some standard function hooks for displaying the CAPTCHA.  If the image doesn't appear on your site's forms, it may be due to those templates not implementing the proper hooks.
 
@@ -94,6 +96,11 @@ CAPTCHA codes have expiration times in order to reduce the amount of time spamme
 6. CAPTCHA on the registration form
 
 == Changelog ==
+
+= 3.6.2-WP =
+* Add options to protect login and lost password forms
+* Add plugin stats (number of captchas displayed, passed, and failed)
+* Cleanup/improve options page
 
 = 3.6.1-WP =
 * Add `[siwp_show_captcha]` shortcode for displaying a captcha in any WordPress post or page

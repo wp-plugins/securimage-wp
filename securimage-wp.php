@@ -313,6 +313,14 @@ function siwp_process_registration($username, $email, $wperror)
     return true;
 }
 
+function siwp_process_login()
+{
+    $error = '';
+    if (false === siwp_check_captcha($error)) {
+        wp_die(__($error));
+    }
+}
+
 function siwp_check_captcha(&$error)
 {
     $valid       = false; // valid captcha entry?
@@ -382,6 +390,12 @@ function siwp_validate_captcha_by_id($captchaId, $captchaValue)
         }
     }
 
+    if ($valid) {
+        update_site_option('siwp_stat_passed', (int)get_site_option('siwp_stat_passed') + 1);
+    } else {
+        update_site_option('siwp_stat_failed', (int)get_site_option('siwp_stat_failed') + 1);
+    }
+
     return $valid;
 }
 
@@ -440,7 +454,7 @@ function siwp_purge_captchas()
 {
     global $wpdb;
     $table_name = siwp_get_table_name();
-    $expiry_time = siwp_get_captcha_expiration();
+    $expiry_time = (int)siwp_get_captcha_expiration();
 
     $res = $wpdb->query(
         $wpdb->prepare("DELETE FROM $table_name WHERE UNIX_TIMESTAMP() - created >= %d", $expiry_time)
@@ -448,6 +462,20 @@ function siwp_purge_captchas()
 
     if ($res !== false) {
         return $res;
+    } else {
+        return 0;
+    }
+}
+
+function siwp_get_captcha_database_count()
+{
+    global $wpdb;
+    $table_name = siwp_get_table_name();
+
+    $result = $wpdb->get_row("SELECT COUNT(id) AS count FROM $table_name");
+
+    if ($result) {
+        return $result->count;
     } else {
         return 0;
     }
@@ -491,6 +519,24 @@ if (true == get_option('siwp_enabled_signup', 1)) {
     add_action('register_post', 'siwp_process_registration', 0, 3);
 }
 
+// check to enable captcha on login form
+if (true == get_option('siwp_enabled_loginform', 0)) {
+    add_action('login_form', 'siwp_captcha_html', 99, 1);
+
+    if (strtolower($_SERVER['REQUEST_METHOD']) == 'post') {
+        add_action('login_form_login', 'siwp_process_login', 0);
+    }
+}
+
+// check to enable captcha on lost password form
+if (true == get_option('siwp_enabled_lostpassword', 0)) {
+    add_action('lostpassword_form', 'siwp_captcha_html', 99, 1);
+
+    if (strtolower($_SERVER['REQUEST_METHOD']) == 'post') {
+        add_action('lostpassword_post', 'siwp_process_login', 0);
+    }
+}
+
 add_shortcode('siwp_show_captcha', 'siwp_captcha_shortcode');
 // end register hooks
 
@@ -511,9 +557,14 @@ function siwp_plugin_menu()
 }
 
 function siwp_plugin_settings_link($links) {
-    $settings_link = '<a href="options-general.php?page=securimage-wp-options">Settings</a>';
+    $settings_link = '<a href="' . siwp_plugin_settings_url() . '">Settings</a>';
     array_unshift($links, $settings_link);
     return $links;
+}
+
+function siwp_plugin_settings_url()
+{
+    return 'options-general.php?page=securimage-wp-options';
 }
 
 function siwp_callback_check_code_length($value) {
@@ -588,6 +639,12 @@ function siwp_register_settings()
     register_setting('securimage-wp-options', 'siwp_has_donated');
     register_setting('securimage-wp-options', 'siwp_enabled_comments');
     register_setting('securimage-wp-options', 'siwp_enabled_signup');
+    register_setting('securimage-wp-options', 'siwp_enabled_loginform');
+    register_setting('securimage-wp-options', 'siwp_enabled_lostpassword');
+
+    register_setting('securimage-wp-stats', 'siwp_stat_failed');
+    register_setting('securimage-wp-stats', 'siwp_stat_passed');
+    register_setting('securimage-wp-stats', 'siwp_stat_displayed');
 }
 
 function siwp_show_donate()
@@ -615,6 +672,8 @@ function siwp_plugin_options()
         wp_die( __('You do not have sufficient permissions to access this page.') );
     }
 
+    $rateUrl = 'https://wordpress.org/support/view/plugin-reviews/securimage-wp#postform';
+
     if (isset($_GET['action'])) {
         switch($_GET['action']) {
             case 'purge':
@@ -624,7 +683,7 @@ function siwp_plugin_options()
 
             case 'dismissdonate':
                 update_option('siwp_dismiss_donate', 1);
-                $plugin_messages = "Thanks for using this plugin.  Tell your friends!";
+                $plugin_messages = "Thank you for using Securimage-WP.  The donation window will no longer appear.<br /><br />If you have a few minutes, please take a moment to <a href='{$rateUrl}' target='_blank'>rate this plugin</a> if you can.  Thanks!";
                 break;
 
             case 'donated':
@@ -633,6 +692,12 @@ function siwp_plugin_options()
                 $plugin_messages = "Thank you very much for your contribution!  Your support is greatly appreciated.";
                 break;
 
+            case 'reset-stats':
+                update_site_option('siwp_stat_displayed', 0);
+                update_site_option('siwp_stat_failed', 0);
+                update_site_option('siwp_stat_passed', 0);
+                $plugin_messages = 'The plugin statistics have been reset.';
+                break;
         }
     }
 ?>
@@ -640,13 +705,28 @@ function siwp_plugin_options()
     <div class="wrap">
     <div id="icon-options-general" class="icon32"><br /></div>
     <h2>Securimage-WP Options</h2>
-    <span style="margin: 5px 0 0 45px"><a href="http://www.phpcaptcha.org/download/wordpress-plugin/#respond" target="_blank">Leave a Comment</a> &nbsp; - &nbsp; <a href="http://phpcaptcha.org/contact" target="_blank">Support/Contact</a></span>
-    <div style="clear: both"></div>
+    <a href="https://www.phpcaptcha.org/contact" target="_blank">Plugin Support/Contact</a>&nbsp; - &nbsp; <a href="https://www.phpcaptcha.org/download/wordpress-plugin/#respond" target="_blank">Leave a Comment</a> &nbsp; - &nbsp; <a href="<?php echo $rateUrl ?>" target="_blank">Rate This Plugin</a><br/>
 
     <?php if (!empty($plugin_messages)): ?>
     <div id="message" class="updated below-h2"><p>
         <?php echo $plugin_messages; ?>
     </p></div>
+    <?php endif; ?>
+
+    <?php $numDisplayed = (int)get_site_option('siwp_stat_displayed'); ?>
+    <?php if ($numDisplayed > 0): ?>
+    <div style="width: 500px; margin: 10px 10px 20px; padding: 10px 10px 20px; background-color: rgb(242, 242, 242); border: 1px solid rgb(220, 220, 220); border-radius: 8px; text-shadow: 1px 1px 0pt rgb(255, 255, 255); box-shadow: 1px 1px 0pt rgb(255, 255, 255) inset, -1px -1px 0pt rgb(255, 255, 255); position: relative">
+        <h3>Plugin Stats:</h3>
+        <div style="clear: both"></div>
+        <strong>Number of CAPTCHAs displayed:</strong> <em><?php echo number_format($numDisplayed) ?></em>
+        <span style="float: right"><a href="#" onclick="return confirmResetStats()">Reset Statistics</a></span>
+        <br />
+        <strong>Number of failed validations:</strong> <em><?php echo number_format(get_site_option('siwp_stat_failed')) ?></em><br />
+        <strong>Number of passed validations:</strong> <em><?php echo number_format(get_site_option('siwp_stat_passed')) ?></em><br />
+        <strong>Number of codes in the database:</strong> <em><?php echo siwp_get_captcha_database_count() ?></em>
+        <span style="float: right"><a href="<?php echo siwp_plugin_settings_url() ?>&amp;action=purge">Purge Expired Codes</a></span>
+
+    </div>
     <?php endif; ?>
 
     <?php if (siwp_show_donate()): ?>
@@ -672,22 +752,12 @@ function siwp_plugin_options()
     </div>
     <?php endif; ?>
 
-    <table class="form-table">
-        <tr valign="top">
-            <th colspan="2" scope="row" style="font-size: 1.4em">Operations</th>
-        </tr>
-        <tr valign="top">
-            <td valign="top"><a href="<?php echo $_SERVER['PHP_SELF'] ?>?page=securimage-wp-options&amp;action=purge">Purge expired codes now</a></td>
-        </tr>
-    </table>
-
-
     <form method="post" action="options.php">
     <?php settings_fields('securimage-wp-options'); ?>
     <?php do_settings_sections('securimage-wp-options'); ?>
 
     <table class="form-table">
-        <tr valign="top"><td width="300"></td><td></td></tr>
+        <tr valign="top"><td width="300"><input type="submit" name="submit" value="<?php _e('Save Changes') ?>" /></td><td></td></tr>
 
         <tr valign="top">
             <th colspan="2" scope="row" style="font-size: 1.4em">Protection Options</th>
@@ -701,6 +771,16 @@ function siwp_plugin_options()
         <tr valign="top">
             <th scope="row"><label for="siwp_enabled_signup">Enable on registration form:<br /><span style="font-size: 0.8em">Enable captcha protecion on registration form</span></label></th>
             <td><input type="checkbox" id="siwp_enabled_signup" name="siwp_enabled_signup" value="1" <?php checked(1, get_option('siwp_enabled_signup', 1)) ?>/></td>
+        </tr>
+
+        <tr valign="top">
+            <th scope="row"><label for="siwp_enabled_loginform">Enable on login form:<br /><span style="font-size: 0.8em">Enable captcha protecion on login form</span></label></th>
+            <td><input type="checkbox" id="siwp_enabled_loginform" name="siwp_enabled_loginform" value="1" <?php checked(1, get_option('siwp_enabled_loginform', 0)) ?>/></td>
+        </tr>
+
+        <tr valign="top">
+            <th scope="row"><label for="siwp_enabled_lostpassword">Enable on lost password form:<br /><span style="font-size: 0.8em">Enable captcha protecion on  on the lost password retrieval form</span></label></th>
+            <td><input type="checkbox" id="siwp_enabled_lostpassword" name="siwp_enabled_lostpassword" value="1" <?php checked(1, get_option('siwp_enabled_lostpassword', 0)) ?>/></td>
         </tr>
 
         <tr valign="top">
@@ -886,7 +966,19 @@ function siwp_plugin_options()
 
     <p>Image Preview:</p>
     <?php echo siwp_captcha_html(0, true) ?>
+    <?php update_site_option('siwp_stat_displayed', $numDisplayed - 1); // don't count previews ?>
 
     </div>
+
+    <script type="text/javascript">
+    function confirmResetStats() {
+        if (confirm('Are you sure you want to reset the plugin statistics?')) {
+            window.location = window.location = '<?php echo siwp_plugin_settings_url() ?>&action=reset-stats';
+            return false;
+        } else {
+            return false;
+        }
+    }
+    </script>
 
 <?php } // function siwp_plugin_options
