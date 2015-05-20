@@ -95,5 +95,6 @@ $img->noise_level           = (int)$noise_level;
 $img->noise_color           = $noise_color;
 */
 
+update_site_option('siwp_stat_displayed', (int)get_site_option('siwp_stat_displayed') + 1);
 
 $img->show(); // alternate use:  $img->show('/path/to/background_image.jpg');
