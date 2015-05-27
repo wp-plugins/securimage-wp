@@ -701,7 +701,7 @@ function siwp_register_settings()
 
 function siwp_show_donate()
 {
-    if ((bool)get_option('siwp_dismiss_donate', 0) === false) {
+    if ((bool)get_option('siwp_dismiss_donate', 0) !== false) {
         return true;
     } else {
         return false;
