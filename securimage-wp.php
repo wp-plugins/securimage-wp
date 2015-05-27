@@ -728,6 +728,7 @@ function siwp_get_language_files()
         'nl'    => 'securimage_audio-nl.zip',
         'pt-br' => 'securimage_audio-pt-2.zip',
         'tr'    => 'securimage_audio-tr.zip',
+        'noise' => 'securimage_audio-noise.zip',
     );
 }
 
@@ -745,7 +746,7 @@ function siwp_install_language()
     $langBase    = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR . 'audio' . DIRECTORY_SEPARATOR;
 
     if (!is_writable($langBase)) {
-        return __('The audio directory is not writable by the server - cannot install language files.');
+        return sprintf(__('The audio directory (%s) is not writable by the server - cannot install language files.'), $langBase);
     }
 
     $langPath = $langBase . $lang;
@@ -794,7 +795,7 @@ function siwp_install_language()
         if ('.wav' != substr($file->name, -4)) continue; // skip non-wav files
 
         if (!file_put_contents($langPath . DIRECTORY_SEPARATOR . $file->name, $file->data)) {
-            $msg = __('Failed to extract contents of language file %s to %s');
+            $msg = __('Failed to extract contents of language file %s to %s.  Ensure directory is writable by the server.');
             return sprintf($msg, $file->name, $langPath);
         }
     }
@@ -848,7 +849,11 @@ function siwp_plugin_options()
                 break;
 
             case 'install-language':
+                @set_time_limit(600);
+                @ini_set('memory_limit', '128M');
+
                 $plugin_messages = siwp_install_language();
+
                 if (true === $plugin_messages) {
                     $plugin_messages = __('The audio files were downloaded and installed successfully!');
                 } else {
@@ -1048,6 +1053,23 @@ function siwp_plugin_options()
                 <?php endif; ?>
                 <br/>
             <?php endforeach; ?>
+            </td>
+        </tr>
+
+        <tr valign="top">
+            <th scope="row"><?php _e('Noise Files') ?><br /><span style="font-size: 0.8em"><?php _e('Noise files are optional but can greatly increase the security of the CAPTCHA audio by adding random, background noise to the generated files.') ?></span></th>
+            <td>
+                <?php
+                $installUrl = siwp_plugin_settings_url() . '&amp;action=install-language&amp;lang=noise';
+                $noiseFile  = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR .
+                             'audio' . DIRECTORY_SEPARATOR . 'noise' . DIRECTORY_SEPARATOR . 'crowd-talking-1.wav';
+
+                if (file_exists($noiseFile)): ?>
+                <?php _e('Installed') ?> <a href="<?php echo $installUrl ?>"><?php _e('Reinstall') ?></a>
+                <?php else: ?>
+                <span style="color: #f00"><?php _e('Not Installed') ?></span> &nbsp;
+                <a href="<?php echo $installUrl ?>"><?php echo _e('Install') ?></a>
+                <?php endif; ?>
             </td>
         </tr>
 
