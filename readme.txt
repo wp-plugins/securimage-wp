@@ -5,7 +5,7 @@ Donate link: http://www.phpcaptcha.org/donate/
 Tags: CAPTCHA, comments, spam protection, comment form, registration, register
 Requires at least: 3.0
 Tested up to: 4.3
-Stable tag: 3.6.2
+Stable tag: 3.6.3
 
 Block comment spam and fake registrations by adding the powerful CAPTCHA protection of Securimage-WP to your WordPress site.
 
@@ -29,6 +29,7 @@ Features Include:
 *	Select the sequence of the CAPTCHA inputs to match your site layout
 *	Allows pingbacks and trackbacks, and replies from administration panel
 *	Doesn't require cookies or PHP session support; codes are stored in the WordPress database
+*	Works with BuddyPress
 
 Requirements:
 
@@ -104,6 +105,11 @@ CAPTCHA codes have expiration times in order to reduce the amount of time spamme
 6. CAPTCHA on the registration form
 
 == Changelog ==
+
+= 3.6.3-WP =
+* Compatibility with BuddyPress registration form
+* Disable audio by default and remove audio files from distribution
+* Automatic language pack installation from plugin options page
 
 = 3.6.2-WP =
 * Add options to protect login and lost password forms
