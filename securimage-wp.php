@@ -4,7 +4,7 @@ Plugin Name: Securimage-WP
 Plugin URI: http://phpcaptcha.org/download/wordpress-plugin
 Description: CAPTCHA plugin for site registration and post/page comment forms
 Author: Drew Phillips
-Version: 3.6.3
+Version: 3.6.2
 Author URI: http://www.phpcaptcha.org/
 */
 
@@ -701,7 +701,7 @@ function siwp_register_settings()
 
 function siwp_show_donate()
 {
-    if ((bool)get_option('siwp_dismiss_donate', 0) === true) {
+    if ((bool)get_option('siwp_dismiss_donate', 0) === false) {
         return true;
     } else {
         return false;
