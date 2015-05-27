@@ -39,6 +39,8 @@ if (get_option('siwp_disable_audio', 0) == 1) {
     exit;
 }
 
+$audio_lang = get_option('siwp_audio_lang', 'en');
+
 $result = siwp_get_code_from_database($captchaId);
 
 if ($result == null) {
@@ -51,8 +53,7 @@ if ($result == null) {
 
 $img->display_value = $code_display;
 
-// To use an alternate language, uncomment the following and download the files from phpcaptcha.org
-// $img->audio_path = $img->securimage_path . '/audio/es/';
+$img->audio_path = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'audio' . DIRECTORY_SEPARATOR . $audio_lang;
 
 // If you have more than one captcha on a page, one must use a custom namespace
 // $img->namespace = 'form2';

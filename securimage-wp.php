@@ -85,7 +85,7 @@ function siwp_captcha_html($post_id = 0, $forceDisplay = false, $shortcode = fal
         $captcha_html .= '<div style="font-size: 1.2em; text-align: center">' . __('Securimage-WP CAPTCHA would appear here if you were not logged in as a WordPress administrator') . '</div>';
     } else {
         $show_protected_by = get_option('siwp_show_protected_by', 0);
-        $disable_audio     = get_option('siwp_disable_audio', 0);
+        $disable_audio     = get_option('siwp_disable_audio', 1);
         $flash_bgcol       = get_option('siwp_flash_bgcol', '#ffffff');
         $flash_icon        = get_option('siwp_flash_icon', siwp_default_flash_icon());
         $refresh_text      = get_option('siwp_refresh_text', 'Different Image');
@@ -673,6 +673,7 @@ function siwp_register_settings()
     register_setting('securimage-wp-options', 'siwp_noise_level');
     register_setting('securimage-wp-options', 'siwp_noise_color');
     register_setting('securimage-wp-options', 'siwp_disable_audio');
+    register_setting('securimage-wp-options', 'siwp_audio_lang');
     register_setting('securimage-wp-options', 'siwp_flash_bgcol');
     register_setting('securimage-wp-options', 'siwp_flash_icon');
     register_setting('securimage-wp-options', 'siwp_position_fix');
@@ -717,15 +718,111 @@ function siwp_get_captcha_expiration()
     return $value;
 }
 
+function siwp_get_language_files()
+{
+    return array(
+        'en'    => 'securimage_audio-en.zip',
+        'de'    => 'securimage_audio-de.zip',
+        'fr'    => 'securimage_audio-fr.zip',
+        'it'    => 'securimage_audio-it.zip',
+        'nl'    => 'securimage_audio-nl.zip',
+        'pt-br' => 'securimage_audio-pt-2.zip',
+        'tr'    => 'securimage_audio-tr.zip',
+    );
+}
+
+function siwp_install_language()
+{
+    $installBase = 'http://www.phpcaptcha.org/downloads/audio/';
+    $langFiles   = siwp_get_language_files();
+    $lang        = @$_GET['lang'];
+
+    if (!isset($langFiles[$lang])) {
+        return __('The language you are attempting to install is not a supported language');
+    }
+
+    $downloadUrl = $installBase . $langFiles[$lang];
+    $langBase    = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR . 'audio' . DIRECTORY_SEPARATOR;
+
+    if (!is_writable($langBase)) {
+        return __('The audio directory is not writable by the server - cannot install language files.');
+    }
+
+    $langPath = $langBase . $lang;
+
+    if (!file_exists($langPath)) {
+        if (!mkdir($langPath)) {
+            return __('Failed to create directory for audio files - cannot install language files');
+        }
+    }
+
+    $langFile = @file_get_contents($downloadUrl);
+
+    if (!$langFile) {
+        $reason = null;
+        if (function_exists('error_get_last')) {
+            $err    = error_get_last();
+            $reason = $err['message'];
+        }
+
+        $msg = sprintf(__('The language file could not be downloaded.  You may need to manually download and install the language files from %s'),
+            '<a href="' . $downloadUrl . '" target="_blank">' . $downloadUrl . '</a>');
+
+        if ($reason !== null) {
+            $msg .= '<br /><br />' . __('Reason:') . ' ' . $reason;
+        }
+
+        return $msg;
+    }
+
+    require_once dirname(__FILE__) . '/phpziputils/PhpZipUtils.php';
+
+    $zip = new Dapphp_PhpZipUtils_ZipFile();
+
+    // open zip file from memory string
+    if (!$zip->openFromString($langFile)) {
+        $err = $zip->getStatusString();
+        $msg = __('Failed to unzip language file.');
+        $msg .= '<br /><br />' . __('Reason:') . ' ' . $err;
+
+        return $msg;
+    }
+
+    // iterate over each file/directory in the archive, only extract WAV files
+    foreach($zip->getFiles() as $file) {
+        if ($file->is_directory) continue; // skip directories
+        if ('.wav' != substr($file->name, -4)) continue; // skip non-wav files
+
+        if (!file_put_contents($langPath . DIRECTORY_SEPARATOR . $file->name, $file->data)) {
+            $msg = __('Failed to extract contents of language file %s to %s');
+            return sprintf($msg, $file->name, $langPath);
+        }
+    }
+
+    return true;
+}
+
 function siwp_plugin_options()
 {
     if (!current_user_can('manage_options'))  {
         wp_die( __('You do not have sufficient permissions to access this page.') );
     }
 
-    $rateUrl = 'https://wordpress.org/support/view/plugin-reviews/securimage-wp#postform';
+    $rateUrl  = 'https://wordpress.org/support/view/plugin-reviews/securimage-wp#postform';
+
+    $languages = array(
+        'en'    => 'English (en)',
+        'pt-br' => 'Brazilian Portuguese (pt-BR)',
+        'nl'    => 'Dutch (nl)',
+        'fr'    => 'French (fr)',
+        'de'    => 'German (de)',
+        'it'    => 'Italian (it)',
+        'tr'    => 'Turkish (tr)',
+    );
 
     if (isset($_GET['action'])) {
+        $msg_class = 'updated';
+
         switch($_GET['action']) {
             case 'purge':
                 $num_purged = siwp_purge_captchas();
@@ -749,6 +846,15 @@ function siwp_plugin_options()
                 update_site_option('siwp_stat_passed', 0);
                 $plugin_messages = __('The plugin statistics have been reset.');
                 break;
+
+            case 'install-language':
+                $plugin_messages = siwp_install_language();
+                if (true === $plugin_messages) {
+                    $plugin_messages = __('The audio files were downloaded and installed successfully!');
+                } else {
+                    $msg_class = 'error';
+                }
+                break;
         }
     }
 ?>
@@ -759,7 +865,7 @@ function siwp_plugin_options()
     <a href="https://www.phpcaptcha.org/contact" target="_blank"><?php _e('Plugin Support/Contact') ?></a>&nbsp; - &nbsp; <a href="https://www.phpcaptcha.org/download/wordpress-plugin/#respond" target="_blank"><?php _e('Leave a Comment') ?></a> &nbsp; - &nbsp; <a href="<?php echo $rateUrl ?>" target="_blank"><?php _e('Rate This Plugin') ?></a><br/>
 
     <?php if (!empty($plugin_messages)): ?>
-    <div id="message" class="updated below-h2"><p>
+    <div id="message" class="<?php echo $msg_class ?> below-h2"><p>
         <?php echo $plugin_messages; ?>
     </p></div>
     <?php endif; ?>
@@ -910,12 +1016,39 @@ function siwp_plugin_options()
         </tr>
 
         <tr valign="top">
-            <th colspan="2" scope="row" style="font-size: 1.4em"><?php _e('Flash Button Options') ?></th>
+            <th colspan="2" scope="row" style="font-size: 1.4em"><?php _e('Audio CAPTCHA Options') ?></th>
         </tr>
 
         <tr valign="top">
             <th scope="row"><label for="siwp_disable_audio"><?php _e('Disable Audio CAPTCHA') ?></label></th>
-            <td><input type="checkbox" id="siwp_disable_audio" name="siwp_disable_audio" value="1" <?php checked(1, get_option('siwp_disable_audio', 0)) ?> /></td>
+            <td><input type="checkbox" id="siwp_disable_audio" name="siwp_disable_audio" value="1" <?php checked(1, get_option('siwp_disable_audio', 1)) ?> /></td>
+        </tr>
+
+        <tr valign="top">
+            <th scope="row"><?php _e('Audio Language') ?><br /><span style="font-size: 0.8em"><?php _e('Language to use for the audio CAPTCHA') ?><br /><?php _e('The language files must be installed separately from the plugin before they can be selected') ?></span></th>
+            <td><select name="siwp_audio_lang">
+            <?php foreach($languages as $lang => $langDisp): ?>
+            <option value="<?php echo $lang ?>"<?php if ($lang == get_option('siwp_audio_lang', 'en')): ?> selected="selected"<?php endif; ?>><?php echo $langDisp ?></option>
+            <?php endforeach; ?>
+            </select>
+            </td>
+        </tr>
+
+        <tr valign="top">
+            <th scope="row"><?php _e('Installed Languages') ?></th>
+            <td>
+            <?php $i = 0; foreach($languages as $lang => $langDisp): ?>
+                <?php $installUrl = siwp_plugin_settings_url() . '&amp;action=install-language&amp;lang=' . $lang; ?>
+                <?php echo $langDisp ?>:
+                <?php if (file_exists(dirname(__FILE__) . '/lib/audio/' . $lang . '/A.wav')): ?>
+                <?php _e('Installed') ?> <a href="<?php echo $installUrl ?>"><?php _e('Reinstall') ?></a>
+                <?php else: ?>
+                <span style="color: #f00"><?php _e('Not Installed') ?></span> &nbsp;
+                <a href="<?php echo $installUrl ?>"><?php echo _e('Install') ?></a>
+                <?php endif; ?>
+                <br/>
+            <?php endforeach; ?>
+            </td>
         </tr>
 
         <tr valign="top">

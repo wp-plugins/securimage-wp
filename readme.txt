@@ -76,7 +76,15 @@ For the comment form, the proper hook needed is `<?php do_action( 'comment_form'
 
 For the registration form, the proper hook needed is `<?php do_action( 'register_form' ); ?>`
 
-The calls to these actions should go in the template where you want the CAPTCHA image to appear. 
+The calls to these actions should go in the template where you want the CAPTCHA image to appear.
+
+= How to install audio files for CAPTCHA audio =
+
+Automatic installation of audio files may not work for a number of reasons (e.g. directories not writable by the server, http wrapper not enabled for fopen/file_get_contents, low memory limits) but this does not mean audio files cannot be used.
+
+If automatic installation is not available, audio files can be downloaded from [https://www.phpcaptcha.org/download](https://www.phpcaptcha.org/download) and manually placed in the Securimage-WP plugin directory.
+
+To install audio files, extract the contents of the language pack you wish to use to the `wp-content/plugins/securimage-wp/lib` directory preserving the directory structure from the audio package (so the resulting directories are `lib/audio/en`, `lib/audio/de`, `lib/audio/fr` etc).
 
 = The refresh button does not work =
 
